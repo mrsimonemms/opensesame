@@ -13,10 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import db from './db';
-import logger from './logger';
-import providers from './providers';
-import server from './server';
-import session from './session';
+import { Module } from '@nestjs/common';
 
-export default [db, logger, providers, server, session];
+import { ProvidersController } from './providers.controller';
+import { ProvidersService } from './providers.service';
+
+@Module({
+  providers: [ProvidersService],
+  controllers: [ProvidersController],
+})
+export class ProvidersModule {}

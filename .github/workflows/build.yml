@@ -140,6 +140,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       MONGODB_URL: mongodb://127.0.0.1:27017/auth
+      PROVIDERS_CONFIG_FILE: ${{ github.workspace }}/dev/providers.yaml
       SESSION_COOKIE_HTTPONLY: "false"
       SESSION_SALT: mq9hDxBVDbspDR6n
       SESSION_SAME_SITE: lax
