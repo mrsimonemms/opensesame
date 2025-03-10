@@ -1,29 +1,43 @@
 services:
+  server:
+    build:
+      context: .
+      dockerfile: ./apps/node.Dockerfile
+      target: dev
+      args:
+        APP: server
+    environment:
+      MONGODB_URL: mongodb://mongodb:27017/auth
+      SESSION_COOKIE_HTTPONLY: "false"
+      SESSION_SALT: mq9hDxBVDbspDR6n
+      SESSION_SAME_SITE: lax
+      SESSION_SECRET: averylogphrasebiggerthanthirtytwochars
+    volumes:
+      - ./apps:/home/node/root/apps
+    ports:
+      - 9000:3000
+    links:
+      - gobblr
+      - mongodb
+    restart: on-failure
+
   ########################
   # Third-party services #
   ########################
   gobblr:
     image: ghcr.io/mrsimonemms/gobblr
     environment:
-      GOBBLR_DATABASE: app
-      GOBBLR_HOST: mysql
-      GOBBLR_PASSWORD: password
-      GOBBLR_USERNAME: app
+      GOBBLR_CONNECTION_URI: mongodb://mongodb:27017/gobblr
     ports:
       - 4001:5670
     links:
-      - mysql
+      - mongodb
     volumes:
       - ./dev/data:/app/data
     restart: on-failure
-    command: db sql mysql --run
+    command: db mongodb --run
 
-  mysql:
-    image: mysql:8
-    environment:
-      MYSQL_DATABASE: app
-      MYSQL_RANDOM_ROOT_PASSWORD: "true"
-      MYSQL_PASSWORD: password
-      MYSQL_USER: app
+  mongodb:
+    image: mongo:8.0
     ports:
-      - 4000:3306
+      - 4000:27017
