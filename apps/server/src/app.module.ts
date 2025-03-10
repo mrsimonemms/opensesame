@@ -21,6 +21,7 @@ import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import config from './config';
 import { HealthModule } from './health/health.module';
 import { MetricsController } from './health/metrics.controller';
+import { ProvidersModule } from './providers/providers.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { MetricsController } from './health/metrics.controller';
 
     // Load the internal modules
     HealthModule,
+    ProvidersModule,
   ],
   controllers: [],
   providers: [],

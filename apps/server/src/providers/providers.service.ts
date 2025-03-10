@@ -13,10 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import db from './db';
-import logger from './logger';
-import providers from './providers';
-import server from './server';
-import session from './session';
+import { Inject, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { ProviderConfig } from 'src/config/providers';
 
-export default [db, logger, providers, server, session];
+@Injectable()
+export class ProvidersService {
+  @Inject(ConfigService)
+  private readonly configService: ConfigService;
+
+  getProviders(): ProviderConfig {
+    return this.configService.getOrThrow<ProviderConfig>('providers');
+  }
+}

@@ -8,12 +8,14 @@ services:
         APP: server
     environment:
       MONGODB_URL: mongodb://mongodb:27017/auth
+      PROVIDERS_CONFIG_FILE: /providers.yaml
       SESSION_COOKIE_HTTPONLY: "false"
       SESSION_SALT: mq9hDxBVDbspDR6n
       SESSION_SAME_SITE: lax
       SESSION_SECRET: averylogphrasebiggerthanthirtytwochars
     volumes:
       - ./apps:/home/node/root/apps
+      - ./dev/providers.yaml:/providers.yaml
     ports:
       - 9000:3000
     links:

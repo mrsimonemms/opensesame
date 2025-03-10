@@ -1,0 +1,4 @@
+providers:
+  - id: github
+    name: GitHub
+    address: provider_github:3000
