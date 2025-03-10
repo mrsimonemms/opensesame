@@ -1,0 +1,19 @@
+{
+  "template": "https://github.com/mrsimonemms/new",
+  "commit": "761212afc7808a004f4b7b07515c68ca5ba962f7",
+  "checkout": "main",
+  "context": {
+    "cookiecutter": {
+      "project_name": "cloud-native-auth",
+      "description": "Authentication and authorization for cloud-native apps",
+      "author": "Simon Emms <simon@simonemms.com>",
+      "repo": "github.com/mrsimonemms/cloud-native-auth",
+      "_template": "https://github.com/mrsimonemms/new",
+      "_commit": "761212afc7808a004f4b7b07515c68ca5ba962f7"
+    }
+  },
+  "directory": "monorepo",
+  "skip": [
+    ".git"
+  ]
+}
