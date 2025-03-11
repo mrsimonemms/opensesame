@@ -18,6 +18,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule, MongooseModuleOptions } from '@nestjs/mongoose';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 
+import { AuthModule } from './auth/auth.module';
 import config from './config';
 import { HealthModule } from './health/health.module';
 import { MetricsController } from './health/metrics.controller';
@@ -41,6 +42,7 @@ import { ProvidersModule } from './providers/providers.module';
     }),
 
     // Load the internal modules
+    AuthModule,
     HealthModule,
     ProvidersModule,
   ],
