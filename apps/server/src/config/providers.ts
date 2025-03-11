@@ -54,7 +54,7 @@ export class Provider {
     protocols: [],
     allow_underscores: true,
     require_tld: false,
-    require_protocol: true,
+    require_protocol: false,
   })
   address: string;
 }

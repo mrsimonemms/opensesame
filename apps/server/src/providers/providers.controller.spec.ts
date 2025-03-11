@@ -26,7 +26,14 @@ describe('ProvidersController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [ConfigModule],
-      providers: [ProvidersService],
+      providers: [
+        {
+          provide: ProvidersService,
+          useFactory: () => ({
+            generateStrategy: jest.fn(),
+          }),
+        },
+      ],
       controllers: [ProvidersController],
     }).compile();
 
