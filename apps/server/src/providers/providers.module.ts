@@ -13,12 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
 
 import { ProvidersController } from './providers.controller';
 import { ProvidersService } from './providers.service';
 
 @Module({
+  imports: [HttpModule],
   providers: [ProvidersService],
   controllers: [ProvidersController],
 })

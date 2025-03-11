@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 
@@ -21,18 +22,28 @@ import { ProvidersService } from './providers.service';
 describe('ProvidersService', () => {
   let config: ConfigService;
   let service: ProvidersService;
+  let httpService: HttpService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [ConfigService, ProvidersService],
+      providers: [
+        ConfigService,
+        ProvidersService,
+        {
+          provide: HttpService,
+          useFactory: () => ({}),
+        },
+      ],
     }).compile();
 
     service = module.get<ProvidersService>(ProvidersService);
     config = module.get<ConfigService>(ConfigService);
+    httpService = module.get<HttpService>(HttpService);
   });
 
   it('should be defined', () => {
     expect(service).toBeDefined();
     expect(config).toBeDefined();
+    expect(httpService).toBeDefined();
   });
 });
