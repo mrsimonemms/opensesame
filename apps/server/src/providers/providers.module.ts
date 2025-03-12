@@ -15,12 +15,37 @@
  */
 import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ClientsModule, Transport } from '@nestjs/microservices';
+import { join } from 'path';
 
 import { ProvidersController } from './providers.controller';
 import { ProvidersService } from './providers.service';
 
 @Module({
-  imports: [HttpModule],
+  imports: [
+    HttpModule,
+    ClientsModule.registerAsync([
+      {
+        name: 'sss',
+        imports: [ConfigModule],
+        inject: [ConfigService],
+        useFactory: (config: ConfigService) => ({
+          transport: Transport.GRPC,
+          options: {
+            // url: config.getOrThrow('grpc.services.github'),
+            package: 'authentication',
+            protoPath: join(
+              config.getOrThrow('providers.protoPath'),
+              'authentication',
+              'v1',
+              'authentication.proto',
+            ),
+          },
+        }),
+      },
+    ]),
+  ],
   providers: [ProvidersService],
   controllers: [ProvidersController],
 })

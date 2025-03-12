@@ -25,6 +25,7 @@ import {
   validateSync,
 } from 'class-validator';
 import { readFileSync } from 'fs';
+import { join } from 'path';
 import { parse } from 'yaml';
 
 export class Provider {
@@ -64,6 +65,8 @@ export class ProviderConfig {
   @ValidateNested()
   @Type(() => Provider)
   providers: Provider[];
+
+  protoPath: string;
 }
 
 export default registerAs('providers', (): ProviderConfig => {
@@ -77,6 +80,9 @@ export default registerAs('providers', (): ProviderConfig => {
     ProviderConfig,
     parse(readFileSync(configFilePath, 'utf-8')),
   );
+
+  // Set the proto path
+  config.protoPath = join(__dirname, '..', '..', '..', '..', 'proto');
 
   const err = validateSync(config);
   if (err.length > 0) {

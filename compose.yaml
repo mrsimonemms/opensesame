@@ -16,6 +16,7 @@ services:
     volumes:
       - ./apps:/home/node/root/apps
       - ./dev/providers.yaml:/providers.yaml
+      - ./proto:/home/node/root/proto
     ports:
       - 9000:3000
     links:
