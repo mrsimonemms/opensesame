@@ -90,7 +90,7 @@ export class ProvidersController {
     @Req() req: FastifyRequest,
     @Res() res: FastifyReply,
   ) {
-    const strategy = this.service.generateStrategy(providerId);
+    const strategy = this.service.generateStrategy(providerId, res);
 
     const handler = passport.authenticate(
       strategy,

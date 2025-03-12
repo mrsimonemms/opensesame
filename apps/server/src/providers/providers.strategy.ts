@@ -14,14 +14,10 @@
  * limitations under the License.
  */
 import { Request } from 'express';
-import { Strategy, StrategyFailure } from 'passport';
+import { Strategy } from 'passport';
 
 export interface VerifyCallback {
-  (req: Request, done: VerifiedCallback): void;
-}
-
-export interface VerifiedCallback {
-  (err: Error | null, user?: unknown, info?: unknown): void;
+  (req: Request): void;
 }
 
 export class ProvidersStrategy extends Strategy {
@@ -32,15 +28,6 @@ export class ProvidersStrategy extends Strategy {
   }
 
   authenticate(req: Request) {
-    this.verify(req, (err: Error | null, user?: unknown, info?: unknown) => {
-      if (err) {
-        return this.error(err);
-      }
-      if (!user) {
-        return this.fail(info as StrategyFailure | string | number);
-      }
-
-      this.success(user, info as object);
-    });
+    this.verify(req);
   }
 }

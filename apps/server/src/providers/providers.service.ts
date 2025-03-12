@@ -13,7 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientGrpcProxy } from '@nestjs/microservices';
 import { Request as ExpressReq, Response as ExpressRes } from 'express';
@@ -26,7 +32,7 @@ import {
   AuthenticationServiceClient,
 } from '../interfaces/authentication/v1/authentication';
 import { PROVIDERS } from './constants';
-import { ProvidersStrategy, VerifiedCallback } from './providers.strategy';
+import { ProvidersStrategy } from './providers.strategy';
 
 @Injectable()
 export class ProvidersService {
@@ -92,31 +98,37 @@ export class ProvidersService {
     return this.configService.getOrThrow<ProviderConfig>('providers');
   }
 
-  generateStrategy(providerId: string): PassportStrategy {
-    const { provider, grpc } = this.findProvider(providerId);
+  generateStrategy(providerId: string, reply: FastifyReply): PassportStrategy {
+    const { grpc } = this.findProvider(providerId);
 
     const service = grpc.getService<AuthenticationServiceClient>(
       AUTHENTICATION_SERVICE_NAME,
     );
 
-    const strategy = new ProvidersStrategy(
-      (req: ExpressReq, done: VerifiedCallback) => {
-        service
-          .auth({
-            body: JSON.stringify(req.body ?? {}),
-            headers: JSON.stringify(req.headers ?? {}),
-            method: req.method,
-            params: JSON.stringify(req.params ?? {}),
-            query: JSON.stringify(req.query ?? {}),
-            url: req.url,
-          })
-          .subscribe((v) => {
-            console.log({ v });
+    const strategy = new ProvidersStrategy((req: ExpressReq) => {
+      service
+        .auth({
+          body: JSON.stringify(req.body ?? {}),
+          headers: JSON.stringify(req.headers ?? {}),
+          method: req.method,
+          params: JSON.stringify(req.params ?? {}),
+          query: JSON.stringify(req.query ?? {}),
+          url: req.url,
+        })
+        .subscribe((result) => {
+          const { redirect } = result;
+          if (redirect) {
+            this.logger.log('Redirecting');
+            reply.redirect(redirect.url, redirect.status ?? 302);
+            return;
+          }
 
-            done(new NotFoundException(provider.id));
+          this.logger.error('Passport strategy subscribe not handled', {
+            result,
           });
-      },
-    );
+          reply.send(new InternalServerErrorException());
+        });
+    });
 
     return strategy;
   }
