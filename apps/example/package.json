@@ -1,0 +1,19 @@
+{
+  "name": "example",
+  "version": "0.0.0",
+  "main": "src/app.js",
+  "type": "module",
+  "scripts": {
+    "start:dev": "nodemon .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "passport": "^0.7.0",
+    "passport-http": "^0.3.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}
