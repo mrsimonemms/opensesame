@@ -13,6 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import * as grpc from '@grpc/grpc-js';
+import * as protoLoader from '@grpc/proto-loader';
+import { ReflectionService } from '@grpc/reflection';
 import { ConsoleLogger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
@@ -20,9 +23,10 @@ import { join } from 'path';
 
 import { AppModule } from './app.module';
 import loggerConfig from './config/logger';
+import { AUTHENTICATION_V1_PACKAGE_NAME } from './interfaces/authentication/v1/authentication';
 
 async function bootstrap() {
-  const protoRoot = join(__dirname, '..', '..', '..', 'proto');
+  const protoRoot = process.env.PROTO_PATH ?? '';
 
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(
     AppModule,
@@ -30,13 +34,20 @@ async function bootstrap() {
       logger: new ConsoleLogger(loggerConfig()),
       transport: Transport.GRPC,
       options: {
-        package: 'authentication',
+        url: process.env.LISTEN_URL ?? '0.0.0.0:3000',
+        package: AUTHENTICATION_V1_PACKAGE_NAME,
         protoPath: join(
           protoRoot,
           'authentication',
           'v1',
           'authentication.proto',
         ),
+        onLoadPackageDefinition: (
+          pkg: protoLoader.PackageDefinition,
+          server: Pick<grpc.Server, 'addService'>,
+        ) => {
+          new ReflectionService(pkg).addToServer(server);
+        },
       },
     },
   );

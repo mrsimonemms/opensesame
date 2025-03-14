@@ -15,38 +15,54 @@
  */
 import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ClientsModule, Transport } from '@nestjs/microservices';
+import { ConfigService } from '@nestjs/config';
+import {
+  ClientGrpcProxy,
+  ClientProxyFactory,
+  Transport,
+} from '@nestjs/microservices';
 import { join } from 'path';
+import { ProviderConfig } from 'src/config/providers';
 
+import { AUTHENTICATION_V1_PACKAGE_NAME } from '../interfaces/authentication/v1/authentication';
+import { PROVIDERS } from './constants';
 import { ProvidersController } from './providers.controller';
 import { ProvidersService } from './providers.service';
 
 @Module({
-  imports: [
-    HttpModule,
-    ClientsModule.registerAsync([
-      {
-        name: 'sss',
-        imports: [ConfigModule],
-        inject: [ConfigService],
-        useFactory: (config: ConfigService) => ({
-          transport: Transport.GRPC,
-          options: {
-            // url: config.getOrThrow('grpc.services.github'),
-            package: 'authentication',
-            protoPath: join(
-              config.getOrThrow('providers.protoPath'),
-              'authentication',
-              'v1',
-              'authentication.proto',
-            ),
-          },
-        }),
+  imports: [HttpModule],
+  providers: [
+    ProvidersService,
+    {
+      provide: PROVIDERS,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => {
+        const { providers, protoPath } =
+          config.getOrThrow<ProviderConfig>('providers');
+
+        return providers.reduce((result, provider) => {
+          result.set(
+            provider.id,
+            ClientProxyFactory.create({
+              transport: Transport.GRPC,
+              options: {
+                url: provider.address,
+                package: AUTHENTICATION_V1_PACKAGE_NAME,
+                protoPath: join(
+                  protoPath,
+                  'authentication',
+                  'v1',
+                  'authentication.proto',
+                ),
+              },
+            }),
+          );
+
+          return result;
+        }, new Map<string, ClientGrpcProxy>());
       },
-    ]),
+    },
   ],
-  providers: [ProvidersService],
   controllers: [ProvidersController],
 })
 export class ProvidersModule {}

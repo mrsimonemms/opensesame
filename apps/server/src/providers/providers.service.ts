@@ -13,15 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { HttpService } from '@nestjs/axios';
 import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { ClientGrpcProxy } from '@nestjs/microservices';
 import { Request as ExpressReq, Response as ExpressRes } from 'express';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { Strategy as PassportStrategy } from 'passport';
 
 import { Provider, ProviderConfig } from '../config/providers';
+import {
+  AUTHENTICATION_SERVICE_NAME,
+  AuthenticationServiceClient,
+  ListOfStrings,
+} from '../interfaces/authentication/v1/authentication';
+import { PROVIDERS } from './constants';
 import { ProvidersStrategy, VerifiedCallback } from './providers.strategy';
+
+type MapOfListOfString = { [key: string]: ListOfStrings };
+
+type StringOrStringArray = { [key: string]: string | string[] };
 
 @Injectable()
 export class ProvidersService {
@@ -30,8 +40,8 @@ export class ProvidersService {
   @Inject(ConfigService)
   private readonly configService: ConfigService;
 
-  @Inject(HttpService)
-  private readonly httpService: HttpService;
+  @Inject(PROVIDERS)
+  private readonly providers: Map<string, ClientGrpcProxy>;
 
   fastifyToExpress(
     req: FastifyRequest,
@@ -61,7 +71,10 @@ export class ProvidersService {
     ];
   }
 
-  findProvider(providerId: string): Provider {
+  findProvider(providerId: string): {
+    provider: Provider;
+    grpc: ClientGrpcProxy;
+  } {
     const provider = this.getProviders().providers.find(
       ({ id }) => id === providerId,
     );
@@ -71,19 +84,51 @@ export class ProvidersService {
       throw new NotFoundException(`Unknown provider: ${providerId}`);
     }
 
-    return provider;
+    const grpc = this.providers.get(providerId);
+    if (!grpc) {
+      this.logger.warn('Provider does not have a registered gRPC client');
+      throw new NotFoundException(`Unknown provider: ${providerId}`);
+    }
+
+    return { provider, grpc };
   }
 
   getProviders(): ProviderConfig {
     return this.configService.getOrThrow<ProviderConfig>('providers');
   }
 
+  toListOfStrings(input: StringOrStringArray): MapOfListOfString {
+    return Object.entries(input).reduce((result, [key, value]) => {
+      if (!Array.isArray(value)) {
+        value = [value];
+      }
+
+      result[key] = {
+        value,
+      };
+
+      return result;
+    }, {} as MapOfListOfString);
+  }
+
   generateStrategy(providerId: string): PassportStrategy {
-    const provider = this.findProvider(providerId);
+    const { provider, grpc } = this.findProvider(providerId);
+
+    const service = grpc.getService<AuthenticationServiceClient>(
+      AUTHENTICATION_SERVICE_NAME,
+    );
 
     const strategy = new ProvidersStrategy(
       (req: ExpressReq, done: VerifiedCallback) => {
-        done(new NotFoundException(provider.id));
+        service
+          .auth({
+            request: JSON.stringify(req),
+          })
+          .subscribe((v) => {
+            console.log({ v });
+
+            done(new NotFoundException(provider.id));
+          });
       },
     );
 

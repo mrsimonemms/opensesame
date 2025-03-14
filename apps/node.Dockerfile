@@ -23,6 +23,7 @@ ENV VERSION="${VERSION}"
 COPY --chown=node:node . .
 WORKDIR /home/node/root/apps/$APP
 ENV PORT=3000
+ENV PROTO_PATH=/home/node/root/proto
 ENV LOGGER_COLORS_ENABLED=true
 ENV LOGGER_JSON_ENABLED=false
 ENV LOGGER_LEVEL=verbose
@@ -32,6 +33,7 @@ CMD [ "npm", "run", "start:dev" ]
 FROM node:lts-alpine AS builder
 ARG APP
 USER node
+ENV PROTO_PATH=/home/node/root/proto
 WORKDIR /home/node/root
 COPY --from=dev /home/node/root .
 WORKDIR /home/node/root/apps/$APP
@@ -44,8 +46,10 @@ ARG GIT_COMMIT
 ARG VERSION
 WORKDIR /opt/app
 ENV GIT_COMMIT="${GIT_COMMIT}"
+ENV PROTO_PATH=/opt/app/proto
 ENV VERSION="${VERSION}"
 ENV SERVER_PORT=3000
+COPY --from=builder /home/node/root/proto /opt/app/proto
 COPY --from=builder /home/node/root/apps/$APP/dist dist
 COPY --from=builder /home/node/root/apps/$APP/node_modules node_modules
 COPY --from=builder /home/node/root/apps/$APP/package.json package.json

@@ -14,8 +14,13 @@
  * limitations under the License.
  */
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { Strategy, StrategyOptions } from 'passport-github2';
+import { BasicStrategy } from 'passport-http';
+import { VerifyCallback } from 'passport-oauth2';
 
+import { AppController } from './app.controller';
+import { PassportSDK } from './app.strategy';
 import config from './config';
 
 @Module({
@@ -25,7 +30,48 @@ import config from './config';
       load: config,
     }),
   ],
-  controllers: [],
-  providers: [],
+  controllers: [AppController],
+  providers: [
+    {
+      provide: 'passport',
+      useClass: PassportSDK,
+    },
+    {
+      provide: 'strategy',
+      useFactory: () => {
+        return new BasicStrategy(
+          (username: string, password: string, done: unknown) => {
+            console.log({
+              username,
+              password,
+              done,
+            });
+          },
+        );
+      },
+    },
+    // {
+    //   provide: 'strategy',
+    //   inject: [ConfigService],
+    //   useFactory: (config: ConfigService) => {
+    //     return new Strategy(
+    //       config.getOrThrow<StrategyOptions>('strategy'),
+    //       (
+    //         accessToken: string,
+    //         refreshToken: string,
+    //         profile: unknown,
+    //         done: VerifyCallback,
+    //       ) => {
+    //         console.log({
+    //           accessToken,
+    //           refreshToken,
+    //           profile,
+    //           done,
+    //         });
+    //       },
+    //     );
+    //   },
+    // },
+  ],
 })
 export class AppModule {}

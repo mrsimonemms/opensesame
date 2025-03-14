@@ -14,5 +14,6 @@
  * limitations under the License.
  */
 import logger from './logger';
+import strategy from './strategy';
 
-export default [logger];
+export default [logger, strategy];

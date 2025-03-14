@@ -20,12 +20,12 @@ import {
   ArrayMinSize,
   ArrayUnique,
   IsDefined,
+  IsNotEmpty,
   IsUrl,
   ValidateNested,
   validateSync,
 } from 'class-validator';
 import { readFileSync } from 'fs';
-import { join } from 'path';
 import { parse } from 'yaml';
 
 export class Provider {
@@ -51,10 +51,10 @@ export class Provider {
 
   @IsDefined()
   @IsUrl({
-    protocols: ['http', 'https'],
+    protocols: [],
     allow_underscores: true,
     require_tld: false,
-    require_protocol: true,
+    require_protocol: false,
   })
   address: string;
 }
@@ -66,6 +66,8 @@ export class ProviderConfig {
   @Type(() => Provider)
   providers: Provider[];
 
+  @IsDefined()
+  @IsNotEmpty()
   protoPath: string;
 }
 
@@ -82,7 +84,7 @@ export default registerAs('providers', (): ProviderConfig => {
   );
 
   // Set the proto path
-  config.protoPath = join(__dirname, '..', '..', '..', '..', 'proto');
+  config.protoPath = process.env.PROTO_PATH ?? '';
 
   const err = validateSync(config);
   if (err.length > 0) {

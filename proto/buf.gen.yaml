@@ -6,13 +6,18 @@ plugins:
     strategy: all
     path: ./node_modules/ts-proto/protoc-gen-ts_proto
     opt: nestJs=true,returnObservable=true
+  - plugin: ts
+    out: ./apps/provider_github/src/interfaces
+    strategy: all
+    path: ./node_modules/ts-proto/protoc-gen-ts_proto
+    opt: nestJs=true,returnObservable=true
 
-  # # Generate the Golang files for the service
-  - plugin: go
-    out: ./packages
-    strategy: all
-    opt: paths=source_relative
-  - plugin: go-grpc
-    out: ./packages
-    strategy: all
-    opt: paths=source_relative
+  # Generate the Golang files for the service
+  # - plugin: go
+  #   out: ./packages
+  #   strategy: all
+  #   opt: paths=source_relative
+  # - plugin: go-grpc
+  #   out: ./packages
+  #   strategy: all
+  #   opt: paths=source_relative

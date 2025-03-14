@@ -87,8 +87,8 @@ export class ProvidersController {
   })
   login(
     @Param('providerId') providerId: string,
-    @Req() req: FastifyRequest, // This is actually FastifyRequest, but with decorators
-    @Res() res: FastifyReply, // This is actually FastifyReply, but with decorators
+    @Req() req: FastifyRequest,
+    @Res() res: FastifyReply,
   ) {
     const strategy = this.service.generateStrategy(providerId);
 
