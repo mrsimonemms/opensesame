@@ -21,12 +21,14 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/config"
+	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/database"
 	"github.com/rs/zerolog/log"
 )
 
 type Server struct {
 	app    *fiber.App
 	config *config.ServerConfig
+	db     database.Driver
 }
 
 func (s *Server) Start() error {
@@ -41,16 +43,16 @@ func (s *Server) setupRouter() *Server {
 	return s
 }
 
-func New(cfg *config.ServerConfig) *Server {
+func New(cfg *config.ServerConfig, db database.Driver) *Server {
 	app := fiber.New(fiber.Config{
 		AppName:               "cloud-native-auth",
 		DisableStartupMessage: true,
-		EnablePrintRoutes:     true,
 	})
 
 	s := &Server{
 		app:    app,
 		config: cfg,
+		db:     db,
 	}
 
 	return s.setupRouter()

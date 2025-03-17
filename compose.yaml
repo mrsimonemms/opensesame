@@ -8,6 +8,7 @@ services:
         APP: server
     environment:
       CONFIG: config.example.yaml
+      LOG_LEVEL: ${LOG_LEVEL-trace}
     volumes:
       - ./apps:/go/root/apps
     ports:
@@ -24,7 +25,7 @@ services:
   gobblr:
     image: ghcr.io/mrsimonemms/gobblr
     environment:
-      GOBBLR_CONNECTION_URI: mongodb://mongodb:27017/gobblr
+      GOBBLR_CONNECTION_URI: mongodb://mongodb:27017/auth
     ports:
       - 4001:5670
     links:

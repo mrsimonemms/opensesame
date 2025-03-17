@@ -17,7 +17,25 @@
 package config
 
 type ServerConfig struct {
-	Server `json:"server" validate:"required"`
+	Database `json:"database" validate:"required"`
+	Server   `json:"server" validate:"required"`
+}
+
+type DatabaseType string
+
+const (
+	DatabaseTypeMongoDB DatabaseType = "mongodb"
+)
+
+type Database struct {
+	Type DatabaseType `json:"type" validate:"required,oneof=mongodb"`
+
+	MongoDB `json:"mongodb" validate:"required_if=type mongodb"`
+}
+
+type MongoDB struct {
+	ConnectionURI string `json:"connectionURI" validate:"required"`
+	Database      string `json:"database" validate:"required"`
 }
 
 type Server struct {

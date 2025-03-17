@@ -1,2 +1,7 @@
+database:
+  type: mongodb
+  mongodb:
+    connectionURI: mongodb://mongodb:27017
+    database: auth
 server:
   port: 3000
