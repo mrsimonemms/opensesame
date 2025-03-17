@@ -2,6 +2,7 @@
   "image": "ghcr.io/mrsimonemms/devcontainers/full",
   "name": "devcontainer",
   "features": {
+    "ghcr.io/mrsimonemms/devcontainers/cobra-cli:0": {},
     "ghcr.io/devcontainers-extra/features/nestjs-cli:2": {},
     "ghcr.io/azutake/devcontainer-features/go-packages-install:0": {
       "PACKAGES": "github.com/cosmtrek/air@latest,google.golang.org/protobuf/cmd/protoc-gen-go@latest,google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest"
