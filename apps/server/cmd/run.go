@@ -17,7 +17,10 @@
 package cmd
 
 import (
+	"context"
+
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/config"
+	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/database"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/server"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
@@ -41,7 +44,21 @@ var runCmd = &cobra.Command{
 			log.Fatal().Err(err).Msg("Invalid config")
 		}
 
-		if err := server.New(cfg).Start(); err != nil {
+		db, err := database.New(cfg)
+		if err != nil {
+			log.Fatal().Err(err).Msg("Database connection error")
+		}
+
+		ctx := context.Background()
+
+		log.Debug().Msg("Connecting to database")
+		if err := db.Connect(ctx); err != nil {
+			log.Fatal().Err(err).Msg("Error connecting to database")
+		}
+
+		defer db.Close(ctx)
+
+		if err := server.New(cfg, db).Start(); err != nil {
 			log.Fatal().Err(err).Msg("Unable to start server")
 		}
 	},
