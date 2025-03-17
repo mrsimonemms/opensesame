@@ -1,6 +1,6 @@
 {
   "template": "https://github.com/mrsimonemms/new",
-  "commit": "817bd6f084d947c2d68a7875b1bb4ea7ca5c6eb4",
+  "commit": "bbdaf1409e6cfceba9c8833e4bc81f63016eff5d",
   "checkout": null,
   "context": {
     "cookiecutter": {
@@ -9,7 +9,7 @@
       "author": "Simon Emms <simon@simonemms.com>",
       "repo": "github.com/mrsimonemms/cloud-native-auth",
       "_template": "https://github.com/mrsimonemms/new",
-      "_commit": "817bd6f084d947c2d68a7875b1bb4ea7ca5c6eb4"
+      "_commit": "bbdaf1409e6cfceba9c8833e4bc81f63016eff5d"
     }
   },
   "directory": "monorepo",
