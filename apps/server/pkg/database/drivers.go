@@ -27,6 +27,8 @@ import (
 // Common database interface to allow multiple database types
 // in the future.
 type Driver interface {
+	Check(context.Context) error
+
 	// Close the database connection and free up resources
 	Close(context.Context) error
 
