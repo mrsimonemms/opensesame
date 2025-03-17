@@ -18,7 +18,11 @@ import { ConfigService } from '@nestjs/config';
 import { GrpcMethod } from '@nestjs/microservices';
 import { Request } from 'express';
 import { IncomingHttpHeaders } from 'http';
-import { Strategy as GitHubStrategy, StrategyOptions } from 'passport-github2';
+import {
+  Strategy as GitHubStrategy,
+  Profile,
+  StrategyOptions,
+} from 'passport-github2';
 import { VerifyCallback } from 'passport-oauth2';
 import { ParsedQs } from 'qs';
 
@@ -27,6 +31,7 @@ import {
   AUTHENTICATION_SERVICE_NAME,
   AuthRequest,
   AuthResponse,
+  User,
 } from './interfaces/authentication/v1/authentication';
 
 @Controller()
@@ -42,17 +47,21 @@ export class AppController {
       (
         accessToken: string,
         refreshToken: string,
-        profile: unknown,
+        profile: Profile,
         done: VerifyCallback,
       ) => {
-        console.log({
-          accessToken,
-          refreshToken,
-          profile,
-          done,
-        });
+        const user: User = {
+          providerID: profile.id,
+          tokens: {
+            accessToken,
+            refreshToken,
+          },
+          name: profile.displayName,
+          emailAddress: profile.emails?.[0]?.value,
+          username: profile.username,
+        };
 
-        done(null, {});
+        done(null, user);
       },
     );
   }
@@ -70,6 +79,6 @@ export class AppController {
 
     const p = new AuthSDK(req);
 
-    return p.authenticate([this.strategy()]);
+    return p.authenticate([this.strategy()], () => {});
   }
 }

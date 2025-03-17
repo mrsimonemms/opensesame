@@ -22,19 +22,22 @@ import {
   StrategyFailure,
 } from 'passport';
 
-import { AuthResponse } from './interfaces/authentication/v1/authentication';
+import {
+  AuthResponse,
+  User,
+} from './interfaces/authentication/v1/authentication';
 
 export class AuthSDK {
   protected readonly logger = new Logger(this.constructor.name);
 
   constructor(private readonly req: Request) {}
 
-  authenticate(strategies: Strategy | Strategy[]): AuthResponse;
-  authenticate(
+  authenticate2(strategies: Strategy | Strategy[]): AuthResponse;
+  authenticate2(
     strategies: Strategy | Strategy[],
     opts: AuthenticateOptions,
   ): AuthResponse;
-  authenticate(
+  authenticate2(
     strategies: Strategy | Strategy[],
     opts: AuthenticateOptions = {},
   ): AuthResponse {
@@ -43,7 +46,7 @@ export class AuthSDK {
     }
 
     for (const strategy of strategies) {
-      let result: AuthResponse = {};
+      let result: AuthResponse | undefined;
       this.logger.debug('Attempting strategy login', {
         name: strategy.name ?? 'unnamed',
       });
@@ -73,9 +76,13 @@ export class AuthSDK {
           },
         };
       };
-      fns.success = function (user: object, info?: object) {
+      fns.success = function (user: User, info?: object) {
         console.log({ user, info });
-        throw new Error('success not implemented');
+        result = {
+          success: {
+            user,
+          },
+        };
       };
 
       this.logger.debug('Calling authentication on strategy');

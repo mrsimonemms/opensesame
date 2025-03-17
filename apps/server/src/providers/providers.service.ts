@@ -116,10 +116,15 @@ export class ProvidersService {
           url: req.url,
         })
         .subscribe((result) => {
-          const { redirect } = result;
+          const { redirect, success } = result;
           if (redirect) {
             this.logger.log('Redirecting');
             reply.redirect(redirect.url, redirect.status ?? 302);
+            return;
+          }
+          if (success) {
+            this.logger.log('Successful login');
+            reply.send(success);
             return;
           }
 

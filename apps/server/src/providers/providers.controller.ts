@@ -118,4 +118,44 @@ export class ProvidersController {
       },
     );
   }
+
+  @Get('/:providerId/login/callback')
+  @ApiParam({
+    name: 'providerId',
+    description: 'Provider ID',
+    example: 'github',
+  })
+  loginCallback(
+    @Param('providerId') providerId: string,
+    @Req() req: FastifyRequest,
+    @Res() res: FastifyReply,
+  ) {
+    const strategy = this.service.generateStrategy(providerId, res);
+
+    const handler = passport.authenticate(
+      strategy,
+      (err: Error, user?: unknown) => {
+        if (err) {
+          res.send(err);
+          return;
+        }
+        res.send(user);
+      },
+    ) as Handler;
+
+    return handler(
+      ...this.service.fastifyToExpress(req, res),
+      (err?: Error | 'router' | 'route') => {
+        // If we've gotten here, something has gone very wrong
+        this.logger.error(
+          'Provider middleware nextfunction has been triggered',
+          {
+            err,
+          },
+        );
+
+        throw new InternalServerErrorException(err);
+      },
+    );
+  }
 }

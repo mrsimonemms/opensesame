@@ -48,8 +48,30 @@ message Redirect {
   int32 status = 2;
 }
 
+// User - return the user information
+message User {
+  // The user ID used by the provider
+  string providerID = 1;
+  // Any tokens needed to login to the provider
+  map<string, string> tokens = 2;
+  // The user's name according to the provider
+  optional string name = 3;
+  // The user's username according to the provider
+  optional string username = 4;
+  // The user's email address according to the provider
+  optional string emailAddress = 5;
+}
+
+// Success - valid login information
+message Success {
+  // User's login information
+  User user = 1;
+}
+
 // AuthResponse response for an Auth request
 message AuthResponse {
   // Redirecting
   optional Redirect redirect = 1;
+  // Successful call
+  optional Success success = 2;
 }
