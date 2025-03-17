@@ -17,11 +17,18 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/adaptor"
+	"github.com/gofiber/fiber/v2/middleware/healthcheck"
+	"github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/gofiber/fiber/v2/middleware/requestid"
+	"github.com/mrsimonemms/cloud-native-auth/apps/server/internal/providers"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/config"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/database"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog/log"
 )
 
@@ -39,7 +46,30 @@ func (s *Server) Start() error {
 	return s.app.Listen(addr)
 }
 
+func (s *Server) healthcheckProbe(c *fiber.Ctx) bool {
+	if err := s.db.Check(c.Context()); err != nil {
+		log.Error().Err(err).Msg("Unable to connect to database")
+		return false
+	}
+
+	log.Debug().Msg("Service healthy")
+	return true
+}
+
 func (s *Server) setupRouter() *Server {
+	log.Debug().Msg("Creating routes")
+
+	// Health and observability checks
+	s.app.Use(healthcheck.New(healthcheck.Config{
+		LivenessProbe:  s.healthcheckProbe,
+		ReadinessProbe: s.healthcheckProbe,
+	}))
+	s.app.Get("/metrics", adaptor.HTTPHandler(promhttp.Handler()))
+
+	// Versioned endpoints
+	v1 := s.app.Group("/v1")
+	providers.Router(v1, s.config)
+
 	return s
 }
 
@@ -47,7 +77,45 @@ func New(cfg *config.ServerConfig, db database.Driver) *Server {
 	app := fiber.New(fiber.Config{
 		AppName:               "cloud-native-auth",
 		DisableStartupMessage: true,
+		ErrorHandler: func(c *fiber.Ctx, err error) error {
+			code := fiber.StatusInternalServerError
+
+			var e *fiber.Error
+			if errors.As(err, &e) {
+				code = e.Code
+			}
+
+			if code >= 500 && code < 600 {
+				// Log as developer error
+				log.Error().Err(err).Msg("Error")
+			} else {
+				// Log as human error
+				log.Debug().Err(err).Msg(e.Message)
+			}
+
+			// Render the error as JSON
+			err = c.Status(code).JSON(e)
+
+			if err != nil {
+				log.Error().Err(err).Msg("Error rendering web output")
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.ErrInternalServerError)
+			}
+
+			return nil
+		},
 	})
+
+	app.
+		Use(requestid.New()).
+		Use(func(c *fiber.Ctx) error {
+			log.Debug().
+				Interface("requestid", c.Locals(requestid.ConfigDefault.ContextKey)).
+				Str("method", c.Method()).
+				Str("url", c.OriginalURL()).
+				Msg("New route called")
+			return c.Next()
+		}).
+		Use(recover.New())
 
 	s := &Server{
 		app:    app,

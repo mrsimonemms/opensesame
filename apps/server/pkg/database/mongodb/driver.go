@@ -37,6 +37,10 @@ type MongoDB struct {
 	database         string
 }
 
+func (db *MongoDB) Check(ctx context.Context) error {
+	return db.activeConnection.client.Ping(ctx, nil)
+}
+
 func (db *MongoDB) Close(ctx context.Context) error {
 	return db.activeConnection.client.Disconnect(ctx)
 }
@@ -52,14 +56,15 @@ func (db *MongoDB) Connect(ctx context.Context) error {
 		return fmt.Errorf("error connecting to database: %w", err)
 	}
 
-	if err := client.Ping(ctx, nil); err != nil {
-		return fmt.Errorf("error pinging database: %w", err)
-	}
-
 	// Store the Mongo connection
 	db.activeConnection = mongoConnection{
 		client: client,
 		db:     client.Database(db.database),
+	}
+
+	// Check the connection works
+	if err := db.Check(ctx); err != nil {
+		return fmt.Errorf("error pinging database: %w", err)
 	}
 
 	return nil
