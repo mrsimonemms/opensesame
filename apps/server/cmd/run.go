@@ -44,6 +44,10 @@ var runCmd = &cobra.Command{
 			log.Fatal().Err(err).Msg("Invalid config")
 		}
 
+		if err := cfg.ConnectProviders(); err != nil {
+			log.Fatal().Err(err).Msg("Unable to connect to providers")
+		}
+
 		db, err := database.New(cfg)
 		if err != nil {
 			log.Fatal().Err(err).Msg("Database connection error")
