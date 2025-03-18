@@ -17,8 +17,30 @@ services:
     links:
       - gobblr
       - mongodb
+      - provider-github
     restart: on-failure
     command: air -build.args_bin run
+
+  #############
+  # Providers #
+  #############
+  provider-github:
+    build:
+      context: .
+      dockerfile: ./apps/node.Dockerfile
+      target: dev
+      args:
+        APP: provider-github
+    environment:
+      CLIENT_ID: ${GITHUB_CLIENT_ID}
+      CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
+      CALLBACK_URL: http://localhost:9000/v1/providers/github/login/callback
+      SCOPES: repo
+    volumes:
+      - ./apps:/home/node/root/apps
+      - ./proto:/home/node/root/proto
+    ports:
+      - 3000:3000
 
   ########################
   # Third-party services #
