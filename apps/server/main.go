@@ -16,7 +16,9 @@
 
 package main
 
-import "github.com/mrsimonemms/cloud-native-auth/apps/server/cmd"
+import (
+	"github.com/mrsimonemms/cloud-native-auth/apps/server/cmd"
+)
 
 func main() {
 	cmd.Execute()

@@ -17,10 +17,12 @@
 package providers
 
 import (
+	"fmt"
 	"sort"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/config"
+	"github.com/rs/zerolog/log"
 )
 
 type providers struct {
@@ -34,6 +36,8 @@ func Router(route fiber.Router, cfg *config.ServerConfig) {
 
 	route.Route("/providers", func(router fiber.Router) {
 		router.Get("/", p.ListProviders)
+		router.Get("/:providerID/login", p.LoginToProvider)
+		router.Post("/:providerID/login", p.LoginToProvider)
 	})
 }
 
@@ -53,4 +57,16 @@ func (p *providers) ListProviders(c *fiber.Ctx) error {
 	})
 
 	return c.JSON(providers)
+}
+
+func (p *providers) LoginToProvider(c *fiber.Ctx) error {
+	providerID := c.Params("providerID")
+	provider := FindProvider(p.cfg.Providers, providerID)
+	if provider == nil {
+		log.Debug().Str("providerID", providerID).Msg("Unknown provider ID")
+		return fiber.NewError(fiber.StatusNotFound, fmt.Sprintf("Unknown provider ID: %s", providerID))
+	}
+
+	log.Debug().Str("providerID", providerID).Msg("Authenticating against provider")
+	return Authenticate(c, *provider)
 }
