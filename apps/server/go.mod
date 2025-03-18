@@ -2,15 +2,19 @@ module github.com/mrsimonemms/cloud-native-auth/apps/server
 
 go 1.24.1
 
+replace github.com/mrsimonemms/cloud-native-auth/packages/authentication => ../../packages/authentication
+
 require (
 	github.com/go-playground/validator/v10 v10.25.0
 	github.com/gofiber/fiber/v2 v2.52.6
+	github.com/mrsimonemms/cloud-native-auth/packages/authentication v0.0.0-00010101000000-000000000000
 	github.com/prometheus/client_golang v1.21.1
 	github.com/rs/zerolog v1.33.0
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.20.0
 	go.mongodb.org/mongo-driver/v2 v2.1.0
 	golang.org/x/net v0.37.0
+	google.golang.org/grpc v1.71.0
 	sigs.k8s.io/yaml v1.4.0
 )
 
@@ -54,6 +58,7 @@ require (
 	golang.org/x/sync v0.12.0 // indirect
 	golang.org/x/sys v0.31.0 // indirect
 	golang.org/x/text v0.23.0 // indirect
-	google.golang.org/protobuf v1.36.1 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250115164207-1a7da9e5054f // indirect
+	google.golang.org/protobuf v1.36.5 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
