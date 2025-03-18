@@ -17,8 +17,9 @@
 package config
 
 type ServerConfig struct {
-	Database `json:"database" validate:"required"`
-	Server   `json:"server" validate:"required"`
+	Database  `json:"database" validate:"required"`
+	Providers []Provider `json:"providers" validate:"required,min=1,dive"`
+	Server    `json:"server" validate:"required"`
 }
 
 type DatabaseType string
@@ -36,6 +37,12 @@ type Database struct {
 type MongoDB struct {
 	ConnectionURI string `json:"connectionURI" validate:"required"`
 	Database      string `json:"database" validate:"required"`
+}
+
+type Provider struct {
+	ID      string `json:"id" validate:"required"`
+	Name    string `json:"name" validate:"required"`
+	Address string `json:"address" validate:"required,hostname_port"`
 }
 
 type Server struct {
