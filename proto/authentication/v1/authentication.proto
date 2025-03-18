@@ -1,0 +1,81 @@
+// Copyright 2025 Simon Emms <simon@simonemms.com>
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package authentication.v1;
+
+option go_package = "github.com/mrsimonemms/cloud-native-auth/packages/authentication";
+
+// AuthenticationService handles the individual authentication strategies
+service AuthenticationService {
+  // Handles a new authentication request
+  rpc Auth(AuthRequest) returns (AuthResponse) {}
+}
+
+// KeyRepeatedValue handles definition of repeated values in maps
+message KeyRepeatedValue {
+  // Value to use
+  repeated string value = 1;
+}
+
+// AuthRequest receives the information about the request
+message AuthRequest {
+  // JSON string of the body object
+  string body = 1;
+  // Headers object
+  map<string, KeyRepeatedValue> headers = 2;
+  // Header method, eg GET, POST, PUT, DELETE etc
+  string method = 3;
+  // Query object
+  map<string, string> query = 4;
+  // URL, without the domain
+  string url = 5;
+}
+
+// Redirecting the webpage to somewhere else
+message Redirect {
+  // URL to redirect to
+  string url = 1;
+  // HTTP status code
+  int32 status = 2;
+}
+
+// User - return the user information
+message User {
+  // The user ID used by the provider
+  string provider_id = 1;
+  // Any tokens needed to login to the provider
+  map<string, string> tokens = 2;
+  // The user's name according to the provider
+  optional string name = 3;
+  // The user's username according to the provider
+  optional string username = 4;
+  // The user's email address according to the provider
+  optional string email_address = 5;
+}
+
+// Success - valid login information
+message Success {
+  // User's login information
+  User user = 1;
+}
+
+// AuthResponse response for an Auth request
+message AuthResponse {
+  // Redirecting
+  optional Redirect redirect = 1;
+  // Successful call
+  optional Success success = 2;
+}
