@@ -16,6 +16,10 @@
 
 package config
 
+import (
+	"github.com/mrsimonemms/cloud-native-auth/packages/authentication/v1"
+)
+
 type ServerConfig struct {
 	Database  `json:"database" validate:"required"`
 	Providers []Provider `json:"providers" validate:"required,min=1,dive"`
@@ -43,6 +47,8 @@ type Provider struct {
 	ID      string `json:"id" validate:"required"`
 	Name    string `json:"name" validate:"required"`
 	Address string `json:"address" validate:"required,hostname_port"`
+
+	Client authentication.AuthenticationServiceClient `json:"-"`
 }
 
 type Server struct {

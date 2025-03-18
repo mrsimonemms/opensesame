@@ -21,8 +21,26 @@ import (
 	"os"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/mrsimonemms/cloud-native-auth/packages/authentication/v1"
+	"github.com/rs/zerolog/log"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"sigs.k8s.io/yaml"
 )
+
+func (s *ServerConfig) ConnectProviders() error {
+	for k, p := range s.Providers {
+		log.Debug().Str("address", p.Address).Msg("Connecting to gRPC service")
+		conn, err := grpc.NewClient(p.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		if err != nil {
+			return fmt.Errorf("error connecting to grpc client: %w", err)
+		}
+
+		// Store the client for later use
+		s.Providers[k].Client = authentication.NewAuthenticationServiceClient(conn)
+	}
+	return nil
+}
 
 func (s *ServerConfig) Validate() error {
 	validate := validator.New(validator.WithRequiredStructEnabled())
