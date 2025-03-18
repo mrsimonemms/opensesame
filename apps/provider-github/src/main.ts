@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import * as grpc from '@grpc/grpc-js';
+import { Server } from '@grpc/grpc-js';
 import * as protoLoader from '@grpc/proto-loader';
 import { ReflectionService } from '@grpc/reflection';
 import { ConsoleLogger } from '@nestjs/common';
@@ -42,7 +42,7 @@ async function bootstrap() {
         ),
         onLoadPackageDefinition: (
           pkg: protoLoader.PackageDefinition,
-          server: Pick<grpc.Server, 'addService'>,
+          server: Pick<Server, 'addService'>,
         ) => {
           new ReflectionService(pkg).addToServer(server);
         },

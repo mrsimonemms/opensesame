@@ -44,12 +44,28 @@ message AuthRequest {
   string url = 5;
 }
 
+// AuthResponse response for an Auth request
+message AuthResponse {
+  // Redirecting
+  optional Redirect redirect = 1;
+  // Successful call
+  optional Success success = 2;
+}
+
 // Redirecting the webpage to somewhere else
 message Redirect {
   // URL to redirect to
   string url = 1;
   // HTTP status code
   int32 status = 2;
+}
+
+// Success - valid login information
+message Success {
+  // User's login information
+  User user = 1;
+  // Info object - stringified JSON
+  optional string info = 2;
 }
 
 // User - return the user information
@@ -64,18 +80,4 @@ message User {
   optional string username = 4;
   // The user's email address according to the provider
   optional string email_address = 5;
-}
-
-// Success - valid login information
-message Success {
-  // User's login information
-  User user = 1;
-}
-
-// AuthResponse response for an Auth request
-message AuthResponse {
-  // Redirecting
-  optional Redirect redirect = 1;
-  // Successful call
-  optional Success success = 2;
 }
