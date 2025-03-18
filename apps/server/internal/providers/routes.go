@@ -38,6 +38,7 @@ func Router(route fiber.Router, cfg *config.ServerConfig) {
 		router.Get("/", p.ListProviders)
 		router.Get("/:providerID/login", p.LoginToProvider)
 		router.Post("/:providerID/login", p.LoginToProvider)
+		router.Get("/:providerID/login/callback", p.LoginToProvider)
 	})
 }
 

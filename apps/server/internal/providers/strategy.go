@@ -17,13 +17,15 @@
 package providers
 
 import (
-	"fmt"
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/config"
 	"github.com/mrsimonemms/cloud-native-auth/packages/authentication/v1"
 	"github.com/rs/zerolog/log"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func generateAuthRequest(c *fiber.Ctx) *authentication.AuthRequest {
@@ -49,14 +51,43 @@ func Authenticate(c *fiber.Ctx, provider config.Provider) error {
 	l.Debug().Msg("Triggering call to gRPC provider")
 	res, err := provider.Client.Auth(c.Context(), generateAuthRequest(c))
 	if err != nil {
-		l.Error().Err(err).Msg("Error calling gRPC provider")
-		return fiber.ErrServiceUnavailable
+		grpcError := status.Convert(err)
+		code := grpcError.Code()
+		msg := grpcError.Message()
+
+		statusCode := fiber.StatusServiceUnavailable
+		switch code {
+		case codes.NotFound:
+			statusCode = fiber.StatusNotFound
+		case codes.Unimplemented, codes.Internal:
+			statusCode = fiber.StatusInternalServerError
+		case codes.Unauthenticated:
+			statusCode = fiber.StatusUnauthorized
+		}
+
+		l.Error().
+			Err(err).
+			Int("statusCode", statusCode).
+			Uint32("grpcCode", uint32(code)).
+			Str("errorMsg", msg).
+			Msg("Error calling gRPC provider")
+
+		return fiber.NewError(statusCode, msg)
 	}
 
-	fmt.Printf("%+v\n", res)
+	if res.Redirect != nil {
+		l.Info().Int32("status", res.Redirect.Status).Msg("Auth redirecting")
+		return c.Redirect(res.Redirect.Url, int(res.Redirect.Status))
+	}
+	if res.Success != nil {
+		// @todo(sje): save user to the system
+		l.Info().Msg("Auth successful")
+		return c.JSON(res.Success.User)
+	}
 
 	return c.JSON(fiber.Map{
-		"req": generateAuthRequest(c),
+		"date": time.Now(),
+		"res":  res,
 	})
 }
 

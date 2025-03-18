@@ -16,15 +16,21 @@
 import { Controller, Inject, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GrpcMethod } from '@nestjs/microservices';
-import { Request } from 'express';
-import { IncomingHttpHeaders } from 'http';
-import { ParsedQs } from 'qs';
+import {
+  Strategy as GitHubStrategy,
+  Profile,
+  StrategyOptions,
+} from 'passport-github2';
+import { VerifyCallback } from 'passport-oauth2';
 
+import { ExpressRequest } from './express';
 import {
   AUTHENTICATION_SERVICE_NAME,
   AuthRequest,
   AuthResponse,
+  User,
 } from './interfaces/authentication/v1/authentication';
+import { SDK } from './sdk';
 
 @Controller()
 export class AppController {
@@ -34,18 +40,34 @@ export class AppController {
   private readonly config: ConfigService;
 
   @GrpcMethod(AUTHENTICATION_SERVICE_NAME, 'auth')
-  auth(data: AuthRequest): AuthResponse {
-    const req = {
-      body: JSON.parse(data.body) as unknown,
-      headers: JSON.parse(data.headers) as IncomingHttpHeaders,
-      method: data.method,
-      params: JSON.parse(data.params) as unknown,
-      query: JSON.parse(data.query) as ParsedQs,
-      url: data.url,
-    } as Request;
+  async auth(data: AuthRequest): Promise<AuthResponse> {
+    const req = new ExpressRequest(data);
 
-    console.log(req);
+    const strategy = new GitHubStrategy(
+      this.config.getOrThrow<StrategyOptions>('strategy'),
+      (
+        accessToken: string,
+        refreshToken: string,
+        profile: Profile,
+        done: VerifyCallback,
+      ) => {
+        const user: User = {
+          providerId: profile.id,
+          tokens: {
+            accessToken,
+            refreshToken,
+          },
+          name: profile.displayName,
+          emailAddress: profile.emails?.[0]?.value,
+          username: profile.username,
+        };
 
-    return {};
+        done(null, user);
+      },
+    );
+
+    const passport = new SDK(req);
+
+    return passport.authenticate([strategy]);
   }
 }
