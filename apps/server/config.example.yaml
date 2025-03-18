@@ -3,5 +3,9 @@ database:
   mongodb:
     connectionURI: mongodb://mongodb:27017
     database: auth
+providers:
+  - id: github
+    name: GitHub
+    address: provider-github:3000
 server:
   port: 3000
