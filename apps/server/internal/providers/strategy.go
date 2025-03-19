@@ -18,11 +18,11 @@ package providers
 
 import (
 	"strings"
-	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/config"
 	"github.com/mrsimonemms/cloud-native-auth/packages/authentication/v1"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -57,6 +57,8 @@ func Authenticate(c *fiber.Ctx, provider config.Provider) error {
 
 		statusCode := fiber.StatusServiceUnavailable
 		switch code {
+		case codes.InvalidArgument, codes.FailedPrecondition:
+			statusCode = fiber.StatusBadRequest
 		case codes.NotFound:
 			statusCode = fiber.StatusNotFound
 		case codes.Unimplemented, codes.Internal:
@@ -80,14 +82,17 @@ func Authenticate(c *fiber.Ctx, provider config.Provider) error {
 		return c.Redirect(res.Redirect.Url, int(res.Redirect.Status))
 	}
 	if res.Success != nil {
-		// @todo(sje): save user to the system
 		l.Info().Msg("Auth successful")
-		return c.JSON(res.Success.User)
+		return AuthSuccess(c, &l, res.Success.User)
 	}
 
+	l.Error().Msg("Empty AuthResponse received")
+	return fiber.ErrUnauthorized
+}
+
+func AuthSuccess(c *fiber.Ctx, logger *zerolog.Logger, providerUser *authentication.User) error {
 	return c.JSON(fiber.Map{
-		"date": time.Now(),
-		"res":  res,
+		"user": providerUser,
 	})
 }
 

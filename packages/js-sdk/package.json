@@ -1,0 +1,34 @@
+{
+  "name": "@cloud-native-auth/js-sdk",
+  "version": "0.0.0",
+  "description": "JavaScript and TypeScript API",
+  "author": "Simon Emms <simon@simonemms.com>",
+  "private": true,
+  "license": "Apache-2.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
+    "test": "echo \"Error: no test specified\""
+  },
+  "dependencies": {
+    "@grpc/grpc-js": "^1.13.0",
+    "@grpc/reflection": "^1.0.4",
+    "@nestjs/config": "^4.0.1",
+    "@nestjs/microservices": "^11.0.12",
+    "express": "^4.21.2",
+    "passport": "^0.7.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.22.0",
+    "@trivago/prettier-plugin-sort-imports": "^5.2.2",
+    "@types/express": "^5.0.1",
+    "@types/passport": "^1.0.17",
+    "eslint-config-prettier": "^10.1.1",
+    "eslint-plugin-prettier": "^5.2.3",
+    "globals": "^16.0.0",
+    "typescript-eslint": "^8.26.1"
+  }
+}

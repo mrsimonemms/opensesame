@@ -102,8 +102,12 @@ jobs:
       - name: Install and build dependencies
         run: |
           make install generate-grpc copy-proto
-          rm -Rf apps/**/node_modules
-          rm -Rf packages/**/node_modules
+
+      - name: Build js-sdk
+        working-directory: ./packages/js-sdk
+        run: |
+          npm ci
+          npm run build
 
       - uses: actions/upload-artifact@v4
         with:

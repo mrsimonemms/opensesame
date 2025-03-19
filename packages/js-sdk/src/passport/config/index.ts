@@ -13,26 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { registerAs } from '@nestjs/config';
-import { StrategyOptions } from 'passport-github2';
+import logger from './logger';
 
-export default registerAs('strategy', (): StrategyOptions => {
-  const callbackURL = process.env.CALLBACK_URL;
-  if (!callbackURL) {
-    throw new Error('CALLBACK_URL is required');
-  }
-
-  return {
-    clientID: process.env.CLIENT_ID ?? '',
-    clientSecret: process.env.CLIENT_SECRET ?? '',
-    callbackURL,
-    scope: [
-      'read:user',
-      'user:email',
-      ...(process.env.SCOPES ?? '')
-        .split(',')
-        .map((i) => i.trim())
-        .filter((i) => i),
-    ],
-  };
-});
+export default [logger];

@@ -38,8 +38,21 @@ services:
     volumes:
       - ./apps:/home/node/root/apps
       - ./proto:/home/node/root/proto
+      - ./packages/js-sdk:/home/node/root/apps/provider-github/node_modules/@cloud-native-auth/js-sdk
     ports:
       - 3000:3000
+    restart: on-failure
+    depends_on:
+      - js-sdk
+
+  js-sdk:
+    image: node:lts
+    working_dir: /home/node/sdk
+    command: npm run build -- --watch
+    volumes:
+      - ./packages/js-sdk:/home/node/sdk
+    user: node
+    restart: on-failure
 
   ########################
   # Third-party services #

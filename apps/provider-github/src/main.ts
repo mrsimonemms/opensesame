@@ -13,48 +13,54 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Server } from '@grpc/grpc-js';
-import * as protoLoader from '@grpc/proto-loader';
-import { ReflectionService } from '@grpc/reflection';
-import { ConsoleLogger } from '@nestjs/common';
-import { NestFactory } from '@nestjs/core';
-import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-import { join } from 'path';
+import { User, bootstrapPassport } from '@cloud-native-auth/js-sdk';
+import { Profile } from 'passport';
+import { Strategy, StrategyOptions } from 'passport-github2';
+import { VerifyCallback } from 'passport-oauth2';
 
-import { AppModule } from './app.module';
-import loggerConfig from './config/logger';
-import { AUTHENTICATION_V1_PACKAGE_NAME } from './interfaces/authentication/v1/authentication';
-
-async function bootstrap() {
-  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
-    AppModule,
-    {
-      logger: new ConsoleLogger(loggerConfig()),
-      transport: Transport.GRPC,
-      options: {
-        url: process.env.LISTEN_URL ?? '0.0.0.0:3000',
-        package: AUTHENTICATION_V1_PACKAGE_NAME,
-        protoPath: join(
-          process.env.PROTO_PATH ?? '',
-          'authentication',
-          'v1',
-          'authentication.proto',
-        ),
-        onLoadPackageDefinition: (
-          pkg: protoLoader.PackageDefinition,
-          server: Pick<Server, 'addService'>,
-        ) => {
-          new ReflectionService(pkg).addToServer(server);
-        },
-      },
-    },
-  );
-
-  await app.listen();
+const callbackURL = process.env.CALLBACK_URL;
+if (!callbackURL) {
+  throw new Error('CALLBACK_URL is required');
 }
 
-bootstrap().catch((err: Error) => {
-  /* Unlikely to get to here but a final catchall */
+const config: StrategyOptions = {
+  clientID: process.env.CLIENT_ID ?? '',
+  clientSecret: process.env.CLIENT_SECRET ?? '',
+  callbackURL,
+  scope: [
+    'read:user',
+    'user:email',
+    ...(process.env.SCOPES ?? '')
+      .split(',')
+      .map((i) => i.trim())
+      .filter((i) => i),
+  ],
+};
+
+const strategy = new Strategy(
+  config,
+  (
+    accessToken: string,
+    refreshToken: string,
+    profile: Profile,
+    done: VerifyCallback,
+  ) => {
+    const user: User = {
+      providerId: profile.id,
+      tokens: {
+        accessToken,
+        refreshToken,
+      },
+      name: profile.displayName,
+      emailAddress: profile.emails?.[0]?.value,
+      username: profile.username,
+    };
+
+    done(null, user);
+  },
+);
+
+bootstrapPassport([strategy]).catch((err: Error) => {
   console.log(err.stack);
   process.exit(1);
 });

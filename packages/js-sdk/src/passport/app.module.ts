@@ -13,24 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { DynamicModule, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { Test, TestingModule } from '@nestjs/testing';
+import { Strategy } from 'passport';
 
 import { AppController } from './app.controller';
+import config from './config';
 
-describe('AppController', () => {
-  let controller: AppController;
-
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      imports: [ConfigModule],
-      controllers: [AppController],
-    }).compile();
-
-    controller = module.get<AppController>(AppController);
-  });
-
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
-  });
-});
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      load: config,
+    }),
+  ],
+  controllers: [AppController],
+})
+export class AppModule {
+  static register(strategies: Strategy[]): DynamicModule {
+    return {
+      module: AppModule,
+      providers: [
+        {
+          provide: 'STRATEGIES',
+          useFactory: (): Strategy[] => {
+            if (strategies.length === 0) {
+              throw new Error('At least one strategy required');
+            }
+            return strategies;
+          },
+        },
+      ],
+    };
+  }
+}

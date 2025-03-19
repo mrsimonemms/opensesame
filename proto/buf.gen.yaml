@@ -1,8 +1,8 @@
 version: v2
 plugins:
-  # Generate the Typescript interface for the NestJS control plane
+  # Generate the TypeScript files for the service
   - local: ./node_modules/ts-proto/protoc-gen-ts_proto
-    out: ./apps/provider-github/src/interfaces
+    out: ./packages/js-sdk/src/interfaces
     opt: nestJs=true,returnObservable=true
     strategy: all
 

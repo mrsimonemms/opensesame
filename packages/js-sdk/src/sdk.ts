@@ -15,6 +15,7 @@
  */
 import { status as GrpcStatus } from '@grpc/grpc-js';
 import { RpcException } from '@nestjs/microservices';
+import { STATUS_CODES } from 'http';
 import {
   AuthenticateOptions,
   Strategy,
@@ -46,20 +47,10 @@ export class SDK {
   ): Promise<AuthResponse> {
     let result: AuthResponse | undefined;
     for (const strategy of strategies) {
-      console.log(strategy.name);
-      console.log('strategy invoking');
-      try {
-        const r = await this.exec(strategy, opts);
-        if (r) {
-          result = r;
-          break;
-        }
-      } catch (err: unknown) {
-        throw new RpcException({
-          code: GrpcStatus.NOT_FOUND,
-          message: (err as Error).message ?? '',
-        });
-        console.log({ err });
+      const res = await this.exec(strategy, opts);
+      if (res) {
+        result = res;
+        break;
       }
     }
 
@@ -75,36 +66,83 @@ export class SDK {
     strategy: Strategy,
     opts: AuthenticateOptions,
   ): Promise<AuthResponse | void> {
-    return new Promise<AuthResponse>((resolve, reject) => {
+    return new Promise<AuthResponse | void>((resolve, reject) => {
       // Create the strategy functions
       const fns = strategy as Strategy & StrategyCreatedStatic;
 
-      // @todo(sje): do something with the reject
-      console.log({ reject });
-
+      /**
+       * Internal error while performing authentication.
+       *
+       * Strategies should call this function when an internal error occurs
+       * during the process of performing authentication; for example, if the
+       * user directory is not available.
+       *
+       * @param {Error} err
+       */
       fns.error = function (err: Error) {
-        console.log({ err });
-        throw new RpcException({
-          code: GrpcStatus.UNIMPLEMENTED,
-          message: 'error not implemented',
-        });
+        // Use reject rather than throwing to avoid this error being repeatedly called
+        reject(
+          new RpcException({
+            code: GrpcStatus.FAILED_PRECONDITION,
+            message: err?.message ?? 'Unknown error',
+          }),
+        );
       };
+
+      /**
+       * Fail authentication, with optional `challenge` and `status`, defaulting
+       * to 401.
+       *
+       * Strategies should call this function to fail an authentication attempt.
+       *
+       * @param {StrategyFailure | String | Number} challenge
+       * @param {Number} status
+       */
       fns.fail = function (
         challenge?: StrategyFailure | string | number,
         status?: number,
       ) {
-        console.log({ challenge, status });
+        let message = STATUS_CODES[401];
+
+        switch (typeof challenge) {
+          case 'string': {
+            message = challenge;
+            break;
+          }
+          case 'object': {
+            message = challenge.message ?? message;
+            break;
+          }
+        }
+
         throw new RpcException({
-          code: GrpcStatus.UNIMPLEMENTED,
-          message: 'fail not implemented',
+          code:
+            status !== 401
+              ? GrpcStatus.FAILED_PRECONDITION
+              : GrpcStatus.UNAUTHENTICATED,
+          message,
         });
       };
+
+      /**
+       * Pass without making a success or fail decision.
+       *
+       * Unlikely to be useful in this application, but exists for PassportJS
+       * compatibility
+       */
       fns.pass = function () {
-        throw new RpcException({
-          code: GrpcStatus.UNIMPLEMENTED,
-          message: 'pass not implemented',
-        });
+        resolve();
       };
+
+      /**
+       * Redirect to `url` with optional `status`, defaulting to 302.
+       *
+       * Strategies should call this function to redirect the user (via their
+       * user agent) to a third-party website for authentication.
+       *
+       * @param {String} url
+       * @param {Number} status
+       */
       fns.redirect = function (url: string, status: number = 302) {
         resolve({
           redirect: {
@@ -113,6 +151,20 @@ export class SDK {
           },
         });
       };
+
+      /**
+       * Authenticate `user`, with optional `info`.
+       *
+       * Strategies should call this function to successfully authenticate a
+       * user.  `user` should be an object supplied by the application after it
+       * has been given an opportunity to verify credentials.  `info` is an
+       * optional argument containing additional user information.  This is
+       * useful for third-party authentication strategies to pass profile
+       * details.
+       *
+       * @param {User} user
+       * @param {Object} info
+       */
       fns.success = function (user: User, info?: object) {
         // Search and remove any undefined tokens
         user.tokens = Object.fromEntries(

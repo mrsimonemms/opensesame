@@ -13,19 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
 
-import { AppController } from './app.controller';
-import config from './config';
-
-@Module({
-  imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      load: config,
-    }),
-  ],
-  controllers: [AppController],
-})
-export class AppModule {}
+export * from './express';
+export * from './interfaces/authentication/v1/authentication';
+export * from './passport/bootstrap';
+export * from './sdk';
