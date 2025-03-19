@@ -22,6 +22,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/config"
+	"github.com/mrsimonemms/cloud-native-auth/packages/authentication/v1"
 	"github.com/rs/zerolog/log"
 )
 
@@ -36,9 +37,9 @@ func Router(route fiber.Router, cfg *config.ServerConfig) {
 
 	route.Route("/providers", func(router fiber.Router) {
 		router.Get("/", p.ListProviders)
-		router.Get("/:providerID/login", p.LoginToProvider)
-		router.Post("/:providerID/login", p.LoginToProvider)
-		router.Get("/:providerID/login/callback", p.LoginToProvider)
+		router.Get("/:providerID/login", p.ValidateRoute(authentication.Route_ROUTE_LOGIN_GET), p.LoginToProvider)
+		router.Post("/:providerID/login", p.ValidateRoute(authentication.Route_ROUTE_LOGIN_POST), p.LoginToProvider)
+		router.Get("/:providerID/login/callback", p.ValidateRoute(authentication.Route_ROUTE_CALLBACK_GET), p.LoginToProvider)
 	})
 }
 
@@ -58,6 +59,36 @@ func (p *providers) ListProviders(c *fiber.Ctx) error {
 	})
 
 	return c.JSON(providers)
+}
+
+func (p *providers) ValidateRoute(routeID authentication.Route) func(c *fiber.Ctx) error {
+	return func(c *fiber.Ctx) error {
+		providerID := c.Params("providerID")
+		provider := FindProvider(p.cfg.Providers, providerID)
+
+		l := log.With().Str("providerID", provider.ID).Int32("route", int32(routeID)).Logger()
+
+		l.Debug().Msg("Validating route can be called")
+
+		res, err := provider.Client.RouteEnabled(c.Context(), &authentication.RouteEnabledRequest{
+			Route: authentication.Route_ROUTE_CALLBACK_GET,
+		})
+		fmt.Printf("%+v\n", routeID)
+		fmt.Printf("%+v\n", authentication.Route_ROUTE_CALLBACK_GET)
+
+		return fiber.ErrNotFound
+		if err != nil || res.Enabled {
+			if err != nil {
+				l = l.With().Err(err).Logger()
+			}
+			l.Debug().Msg("Route enabled - continuing")
+			return c.Next()
+		}
+
+		l.Debug().Msg("Route disabled")
+
+		return fiber.ErrNotFound
+	}
 }
 
 func (p *providers) LoginToProvider(c *fiber.Ctx) error {

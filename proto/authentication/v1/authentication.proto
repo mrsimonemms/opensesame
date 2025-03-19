@@ -22,12 +22,8 @@ option go_package = "github.com/mrsimonemms/cloud-native-auth/packages/authentic
 service AuthenticationService {
   // Handles a new authentication request
   rpc Auth(AuthRequest) returns (AuthResponse) {}
-}
-
-// KeyRepeatedValue handles definition of repeated values in maps
-message KeyRepeatedValue {
-  // Value to use
-  repeated string value = 1;
+  // Validates that a route is active for the strategy
+  rpc RouteEnabled(RouteEnabledRequest) returns (RouteEnabledResponse) {}
 }
 
 // AuthRequest receives the information about the request
@@ -52,12 +48,40 @@ message AuthResponse {
   optional Success success = 2;
 }
 
+// KeyRepeatedValue handles definition of repeated values in maps
+message KeyRepeatedValue {
+  // Value to use
+  repeated string value = 1;
+}
+
 // Redirecting the webpage to somewhere else
 message Redirect {
   // URL to redirect to
   string url = 1;
   // HTTP status code
   int32 status = 2;
+}
+
+// Route
+enum Route {
+  // GET:/login URL
+  ROUTE_LOGIN_GET = 0;
+  // POST:/login URL
+  ROUTE_LOGIN_POST = 1;
+  // GET:/login/callback URL
+  ROUTE_CALLBACK_GET = 2;
+}
+
+// RouteEnabledRequest
+message RouteEnabledRequest {
+  // Route ID
+  Route route = 1;
+}
+
+// RouteEnabledResponse
+message RouteEnabledResponse {
+  // Is it enabled for this route?
+  bool enabled = 1;
 }
 
 // Success - valid login information

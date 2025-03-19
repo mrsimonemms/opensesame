@@ -13,14 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { status as GrpcStatus } from '@grpc/grpc-js';
 import { Controller, Inject, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { GrpcMethod } from '@nestjs/microservices';
+import { GrpcMethod, RpcException } from '@nestjs/microservices';
 import {
   Strategy as GitHubStrategy,
   Profile,
   StrategyOptions,
 } from 'passport-github2';
+import { Strategy as LocalStrategy } from 'passport-local';
 import { VerifyCallback } from 'passport-oauth2';
 
 import { ExpressRequest } from './express';
@@ -28,6 +30,9 @@ import {
   AUTHENTICATION_SERVICE_NAME,
   AuthRequest,
   AuthResponse,
+  Route,
+  RouteEnabledRequest,
+  RouteEnabledResponse,
   User,
 } from './interfaces/authentication/v1/authentication';
 import { SDK } from './sdk';
@@ -43,7 +48,7 @@ export class AppController {
   async auth(data: AuthRequest): Promise<AuthResponse> {
     const req = new ExpressRequest(data);
 
-    const strategy = new GitHubStrategy(
+    const githubStrategy = new GitHubStrategy(
       this.config.getOrThrow<StrategyOptions>('strategy'),
       (
         accessToken: string,
@@ -66,8 +71,44 @@ export class AppController {
       },
     );
 
+    console.log(githubStrategy);
+
+    const localStrategy = new LocalStrategy((username, password, done) => {
+      console.log({
+        username,
+        passport,
+      });
+      done(null, false);
+    });
+
     const passport = new SDK(req);
 
-    return passport.authenticate([strategy]);
+    return passport.authenticate([localStrategy]);
+  }
+
+  @GrpcMethod(AUTHENTICATION_SERVICE_NAME, 'routeEnabled')
+  routeEnabled(data: RouteEnabledRequest): RouteEnabledResponse {
+    console.log({ data });
+    let enabled: boolean = false;
+
+    switch (data.route) {
+      case Route.ROUTE_LOGIN_GET:
+        enabled = false;
+        break;
+      case Route.ROUTE_LOGIN_POST:
+        enabled = false;
+        break;
+      case Route.ROUTE_CALLBACK_GET:
+        enabled = true;
+        break;
+      default:
+        throw new RpcException({
+          code: GrpcStatus.UNIMPLEMENTED,
+        });
+    }
+
+    return {
+      enabled,
+    };
   }
 }
