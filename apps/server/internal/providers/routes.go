@@ -19,20 +19,29 @@ package providers
 import (
 	"fmt"
 	"sort"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/mrsimonemms/cloud-native-auth/apps/server/internal/users"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/config"
+	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/database"
 	"github.com/mrsimonemms/cloud-native-auth/packages/authentication/v1"
 	"github.com/rs/zerolog/log"
 )
 
 type controller struct {
-	cfg *config.ServerConfig
+	cfg         *config.ServerConfig
+	db          database.Driver
+	userService *users.Service
 }
 
-func Router(route fiber.Router, cfg *config.ServerConfig) {
+const callbackCookieKey = "callback"
+
+func Router(route fiber.Router, cfg *config.ServerConfig, db database.Driver) {
 	p := controller{
-		cfg: cfg,
+		cfg:         cfg,
+		db:          db,
+		userService: users.NewService(cfg, db),
 	}
 
 	route.Route("/providers", func(router fiber.Router) {
@@ -62,6 +71,23 @@ func (p *controller) ListProviders(c *fiber.Ctx) error {
 }
 
 func (p *controller) LoginToProvider(c *fiber.Ctx) error {
+	if callbackURL := c.Query("callback", ""); callbackURL != "" {
+		// Set a callback URL for after a success resolution
+		log.Debug().Msg("Setting callback cookie")
+		c.Cookie(&fiber.Cookie{
+			Name:  callbackCookieKey,
+			Value: callbackURL,
+		})
+	} else {
+		log.Debug().Msg("Clearing callback cookie")
+		// The c.ClearCookie function doesn't seem to work with encrypt cookie
+		c.Cookie(&fiber.Cookie{
+			Name:    callbackCookieKey,
+			Expires: time.Now().Add(-time.Hour * 24),
+			Value:   "",
+		})
+	}
+
 	providerID := c.Params("providerID")
 	provider := FindProvider(p.cfg.Providers, providerID)
 	if provider == nil {
@@ -69,8 +95,38 @@ func (p *controller) LoginToProvider(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusNotFound, fmt.Sprintf("Unknown provider ID: %s", providerID))
 	}
 
-	log.Debug().Str("providerID", providerID).Msg("Authenticating against provider")
-	return Authenticate(c, *provider)
+	l := log.With().Str("providerID", providerID).Logger()
+
+	l.Debug().Msg("Authenticating against provider")
+	user, err := Authenticate(c, *provider)
+	if err != nil {
+		l.Error().Err(err).Msg("Error authenticating provider")
+		return err
+	}
+	if user == nil {
+		// The webpage has successfully resolved - nothing to do
+		return nil
+	}
+
+	l.Info().Msg("User authenticated by provider - saving to database")
+
+	l.Debug().Msg("Triggering user upsert")
+	userModel, err := p.userService.CreateOrUpdateUserFromProvider(c.Context(), providerID, user)
+	if err != nil {
+		l.Error().Err(err).Msg("Error creating user from provider")
+		return fiber.NewError(fiber.StatusServiceUnavailable, "Error creating user from provider")
+	}
+
+	l.Debug().Msg("Generating the JWT")
+
+	if redirectURL := c.Cookies(callbackCookieKey); redirectURL != "" {
+		l.Info().Msg("Redirecting to URL with token")
+	}
+
+	l.Info().Msg("Outputting the user object")
+	return c.JSON(fiber.Map{
+		"user": userModel,
+	})
 }
 
 func (p *controller) IsRouteEnabled(route authentication.Route) func(c *fiber.Ctx) error {

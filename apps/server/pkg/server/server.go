@@ -22,10 +22,12 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/adaptor"
+	"github.com/gofiber/fiber/v2/middleware/encryptcookie"
 	"github.com/gofiber/fiber/v2/middleware/healthcheck"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/internal/providers"
+	"github.com/mrsimonemms/cloud-native-auth/apps/server/internal/users"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/config"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/database"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -68,7 +70,8 @@ func (s *Server) setupRouter() *Server {
 
 	// Versioned endpoints
 	v1 := s.app.Group("/v1")
-	providers.Router(v1, s.config)
+	providers.Router(v1, s.config, s.db)
+	users.Router(v1, s.config, s.db)
 
 	return s
 }
@@ -114,7 +117,10 @@ func New(cfg *config.ServerConfig, db database.Driver) *Server {
 				Msg("New route called")
 			return c.Next()
 		}).
-		Use(recover.New())
+		Use(recover.New()).
+		Use(encryptcookie.New(encryptcookie.Config{
+			Key: cfg.Server.Cookie.Key,
+		}))
 
 	s := &Server{
 		app:    app,

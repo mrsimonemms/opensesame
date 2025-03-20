@@ -22,7 +22,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/config"
 	"github.com/mrsimonemms/cloud-native-auth/packages/authentication/v1"
-	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -45,7 +44,7 @@ func generateAuthRequest(c *fiber.Ctx) *authentication.AuthRequest {
 	}
 }
 
-func Authenticate(c *fiber.Ctx, provider config.Provider) error {
+func Authenticate(c *fiber.Ctx, provider config.Provider) (*authentication.User, error) {
 	l := log.With().Str("providerID", provider.ID).Logger()
 
 	l.Debug().Msg("Triggering call to gRPC provider")
@@ -74,26 +73,20 @@ func Authenticate(c *fiber.Ctx, provider config.Provider) error {
 			Str("errorMsg", msg).
 			Msg("Error calling gRPC provider")
 
-		return fiber.NewError(statusCode, msg)
+		return nil, fiber.NewError(statusCode, msg)
 	}
 
 	if res.Redirect != nil {
 		l.Info().Int32("status", res.Redirect.Status).Msg("Auth redirecting")
-		return c.Redirect(res.Redirect.Url, int(res.Redirect.Status))
+		return nil, c.Redirect(res.Redirect.Url, int(res.Redirect.Status))
 	}
 	if res.Success != nil {
 		l.Info().Msg("Auth successful")
-		return AuthSuccess(c, &l, res.Success.User)
+		return res.Success.User, nil
 	}
 
 	l.Error().Msg("Empty AuthResponse received")
-	return fiber.ErrUnauthorized
-}
-
-func AuthSuccess(c *fiber.Ctx, logger *zerolog.Logger, providerUser *authentication.User) error {
-	return c.JSON(fiber.Map{
-		"user": providerUser,
-	})
+	return nil, fiber.ErrUnauthorized
 }
 
 func FindProvider(providers []config.Provider, providerID string) *config.Provider {

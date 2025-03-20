@@ -22,6 +22,7 @@ import (
 
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/config"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/database/mongodb"
+	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/models"
 )
 
 // Common database interface to allow multiple database types
@@ -34,6 +35,12 @@ type Driver interface {
 
 	// Authorize the connection to the database
 	Connect(ctx context.Context) error
+
+	// Find the user by the provider and provider user ID
+	FindUserByProviderAndUserID(ctx context.Context, providerID, providerUserID string) (user *models.User, err error)
+
+	// Save the user record to the database
+	SaveUserRecord(ctx context.Context, model *models.User) (user *models.User, err error)
 }
 
 func New(cfg *config.ServerConfig) (Driver, error) {
