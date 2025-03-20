@@ -18,16 +18,22 @@ import { GrpcMethod } from '@nestjs/microservices';
 import { Strategy } from 'passport';
 
 import { ExpressRequest } from '../express';
-import { SDK } from '../sdk';
 import {
   AUTHENTICATION_SERVICE_NAME,
   AuthRequest,
   AuthResponse,
-} from './interfaces/authentication/v1/authentication';
+  RouteEnabledRequest,
+  RouteEnabledResponse,
+} from '../interfaces/authentication/v1/authentication';
+import { SDK } from '../sdk';
+import { ROUTES } from './bootstrap';
 
 @Controller()
 export class AppController {
   protected readonly logger = new Logger(this.constructor.name);
+
+  @Inject('ROUTES')
+  private readonly routes: ROUTES;
 
   @Inject('STRATEGIES')
   private readonly strategies: Strategy[];
@@ -39,5 +45,13 @@ export class AppController {
     const passport = new SDK(req);
 
     return passport.authenticate(this.strategies);
+  }
+
+  @GrpcMethod(AUTHENTICATION_SERVICE_NAME, 'routeEnabled')
+  routeEnabled(data: RouteEnabledRequest): RouteEnabledResponse {
+    return {
+      // If it's not defined, treat as disabled
+      enabled: this.routes.get(data.route) ?? false,
+    };
   }
 }

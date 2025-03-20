@@ -22,13 +22,21 @@ import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { Strategy } from 'passport';
 import { join } from 'path';
 
+import {
+  AUTHENTICATION_V1_PACKAGE_NAME,
+  Route,
+} from '../interfaces/authentication/v1/authentication';
 import { AppModule } from './app.module';
 import loggerConfig from './config/logger';
-import { AUTHENTICATION_V1_PACKAGE_NAME } from './interfaces/authentication/v1/authentication';
 
-export async function bootstrapPassport(strategies: Strategy[]) {
+export type ROUTES = Map<Route, boolean>;
+
+export async function bootstrapPassport(
+  strategies: Strategy[],
+  routes?: ROUTES,
+) {
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(
-    AppModule.register(strategies),
+    AppModule.register(strategies, routes),
     {
       logger: new ConsoleLogger(loggerConfig()),
       transport: Transport.GRPC,

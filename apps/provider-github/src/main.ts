@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { User, bootstrapPassport } from '@cloud-native-auth/js-sdk';
+import { Route, User, bootstrapPassport } from '@cloud-native-auth/js-sdk';
 import { Profile } from 'passport';
 import { Strategy, StrategyOptions } from 'passport-github2';
 import { VerifyCallback } from 'passport-oauth2';
@@ -60,7 +60,14 @@ const strategy = new Strategy(
   },
 );
 
-bootstrapPassport([strategy]).catch((err: Error) => {
+// Configure the routes to use
+const routes = new Map<Route, boolean>([
+  [Route.ROUTE_LOGIN_GET, true],
+  [Route.ROUTE_CALLBACK_GET, true],
+]);
+
+// GO GO GO!!!
+bootstrapPassport([strategy], routes).catch((err: Error) => {
   console.log(err.stack);
   process.exit(1);
 });

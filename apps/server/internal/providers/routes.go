@@ -22,6 +22,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/config"
+	"github.com/mrsimonemms/cloud-native-auth/packages/authentication/v1"
 	"github.com/rs/zerolog/log"
 )
 
@@ -36,9 +37,9 @@ func Router(route fiber.Router, cfg *config.ServerConfig) {
 
 	route.Route("/providers", func(router fiber.Router) {
 		router.Get("/", p.ListProviders)
-		router.Get("/:providerID/login", p.LoginToProvider)
-		router.Post("/:providerID/login", p.LoginToProvider)
-		router.Get("/:providerID/login/callback", p.LoginToProvider)
+		router.Get("/:providerID/login", p.IsRouteEnabled(authentication.Route_ROUTE_LOGIN_GET), p.LoginToProvider)
+		router.Post("/:providerID/login", p.IsRouteEnabled(authentication.Route_ROUTE_LOGIN_POST), p.LoginToProvider)
+		router.Get("/:providerID/login/callback", p.IsRouteEnabled(authentication.Route_ROUTE_CALLBACK_GET), p.LoginToProvider)
 	})
 }
 
@@ -70,4 +71,31 @@ func (p *controller) LoginToProvider(c *fiber.Ctx) error {
 
 	log.Debug().Str("providerID", providerID).Msg("Authenticating against provider")
 	return Authenticate(c, *provider)
+}
+
+func (p *controller) IsRouteEnabled(route authentication.Route) func(c *fiber.Ctx) error {
+	return func(c *fiber.Ctx) error {
+		providerID := c.Params("providerID")
+		provider := FindProvider(p.cfg.Providers, providerID)
+
+		l := log.With().Str("providerID", provider.ID).Str("route", route.String()).Logger()
+
+		l.Debug().Msg("Validating route can be called")
+
+		res, err := provider.Client.RouteEnabled(c.Context(), &authentication.RouteEnabledRequest{
+			Route: route,
+		})
+
+		if err != nil || res.Enabled {
+			if err != nil {
+				l = l.With().Err(err).Logger()
+			}
+			l.Debug().Msg("Route enabled - continuing")
+			return c.Next()
+		}
+
+		l.Debug().Msg("Route disabled")
+
+		return fiber.ErrNotFound
+	}
 }

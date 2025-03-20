@@ -13,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { DynamicModule, Module } from '@nestjs/common';
+import { DynamicModule, Logger, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { Strategy } from 'passport';
 
+import { Route } from '../interfaces/authentication/v1/authentication';
 import { AppController } from './app.controller';
+import { ROUTES } from './bootstrap';
 import config from './config';
 
 @Module({
@@ -30,7 +32,9 @@ import config from './config';
   controllers: [AppController],
 })
 export class AppModule {
-  static register(strategies: Strategy[]): DynamicModule {
+  protected static readonly logger = new Logger('AppModule');
+
+  static register(strategies: Strategy[], routes?: ROUTES): DynamicModule {
     return {
       module: AppModule,
       providers: [
@@ -41,6 +45,23 @@ export class AppModule {
               throw new Error('At least one strategy required');
             }
             return strategies;
+          },
+        },
+        {
+          provide: 'ROUTES',
+          useFactory: (): ROUTES => {
+            if (routes) {
+              this.logger.debug('Routes', { routes });
+              return routes;
+            }
+
+            // By default, enable every route
+            this.logger.debug('All routes enabled');
+            return new Map<Route, boolean>([
+              [Route.ROUTE_LOGIN_GET, true],
+              [Route.ROUTE_LOGIN_POST, true],
+              [Route.ROUTE_CALLBACK_GET, true],
+            ]);
           },
         },
       ],
