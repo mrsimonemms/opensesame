@@ -54,4 +54,10 @@ type Provider struct {
 type Server struct {
 	Host string `json:"host" validate:"required,ip_addr"`
 	Port int    `json:"port" validate:"required,number"`
+
+	Cookie ServerCookie `json:"cookie"`
+}
+
+type ServerCookie struct {
+	Key string `json:"key" validate:"required,base64"`
 }

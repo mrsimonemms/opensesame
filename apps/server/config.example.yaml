@@ -9,3 +9,5 @@ providers:
     address: provider-github:3000
 server:
   port: 3000
+  cookie:
+    key: "{{ .CONFIG_COOKIE_KEY }}"

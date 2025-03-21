@@ -17,8 +17,11 @@
 package config
 
 import (
+	"bytes"
 	"fmt"
 	"os"
+	"strings"
+	"text/template"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/mrsimonemms/cloud-native-auth/packages/authentication/v1"
@@ -55,6 +58,33 @@ func LoadFromFile(configFile string) (*ServerConfig, error) {
 	data, err := os.ReadFile(configFile)
 	if err != nil {
 		return nil, fmt.Errorf("cannot read config: %w", err)
+	}
+
+	// Get the desired environment variables
+	envvars := make(map[string]string)
+	for _, e := range os.Environ() {
+		pair := strings.SplitN(e, "=", 2)
+
+		if len(pair) == 2 && strings.HasPrefix(pair[0], EnvVarPrefix) {
+			envvars[pair[0]] = pair[1]
+		}
+	}
+
+	if len(envvars) > 0 {
+		// Load envvars via Go templates
+		log.Debug().Msg("Parsing config to include envvars")
+		tpl, err := template.New("config").Parse(string(data))
+		if err != nil {
+			return nil, fmt.Errorf("error parsing config as template: %w", err)
+		}
+
+		// Execute the template
+		var cfgParsed bytes.Buffer
+		if err := tpl.Execute(&cfgParsed, envvars); err != nil {
+			return nil, fmt.Errorf("error executing envvar template: %w", err)
+		}
+
+		data = cfgParsed.Bytes()
 	}
 
 	// Load the default values
