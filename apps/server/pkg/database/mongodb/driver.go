@@ -109,6 +109,32 @@ func (db *MongoDB) FindUserByProviderAndUserID(ctx context.Context, providerID, 
 	return result.toModel(), nil
 }
 
+func (db *MongoDB) GetUserByID(ctx context.Context, userID string) (*models.User, error) {
+	id, err := bson.ObjectIDFromHex(userID)
+	if err != nil {
+		return nil, fmt.Errorf("error converting user id to bson object id: %w", err)
+	}
+
+	filter := bson.D{
+		{
+			Key:   "_id",
+			Value: id,
+		},
+	}
+
+	var result user
+	err = db.activeConnection.db.Collection(UsersCollection).FindOne(ctx, filter).Decode(&result)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, nil
+		}
+
+		return nil, fmt.Errorf("error getting user by id: %w", err)
+	}
+
+	return result.toModel(), nil
+}
+
 func (db *MongoDB) SaveUserRecord(ctx context.Context, model *models.User) (*models.User, error) {
 	mongoModel, err := userToMongo(model)
 	if err != nil {

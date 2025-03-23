@@ -14,34 +14,33 @@
  * limitations under the License.
  */
 
-package users
+package auth
 
 import (
-	"github.com/gofiber/fiber/v2"
-	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/auth"
+	"fmt"
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/config"
-	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/database"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/models"
 )
 
-type controller struct {
-	cfg *config.ServerConfig
-	db  database.Driver
-}
+func GenerateToken(user *models.User, cfg *config.ServerConfig) (string, error) {
+	t := jwt.NewWithClaims(
+		jwt.SigningMethodHS256,
+		jwt.MapClaims{
+			"exp": time.Now().Add(cfg.ExpiresIn.Duration).Unix(),
+			"iat": time.Now().Unix(),
+			"iss": cfg.JWT.Issuer,
+			"nbf": time.Now().Unix(),
+			"sub": user.ID,
+		},
+	)
 
-func Router(route fiber.Router, cfg *config.ServerConfig, db database.Driver) {
-	p := controller{
-		cfg: cfg,
-		db:  db,
+	s, err := t.SignedString(cfg.JWT.Key)
+	if err != nil {
+		return "", fmt.Errorf("error generating jwt signed string: %w", err)
 	}
 
-	route.Route("/user", func(router fiber.Router) {
-		router.Get("/", auth.VerifyUser(cfg, db), p.GetUser)
-	})
-}
-
-func (p *controller) GetUser(c *fiber.Ctx) error {
-	return c.JSON(fiber.Map{
-		"user": c.Locals(auth.UserContextKey).(*models.User),
-	})
+	return s, nil
 }

@@ -6,7 +6,9 @@ replace github.com/mrsimonemms/cloud-native-auth/packages/authentication => ../.
 
 require (
 	github.com/go-playground/validator/v10 v10.25.0
+	github.com/gofiber/contrib/jwt v1.0.10
 	github.com/gofiber/fiber/v2 v2.52.6
+	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/mrsimonemms/cloud-native-auth/packages/authentication v0.0.0-00010101000000-000000000000
 	github.com/prometheus/client_golang v1.21.1
 	github.com/rs/zerolog v1.33.0
@@ -19,6 +21,7 @@ require (
 )
 
 require (
+	github.com/MicahParks/keyfunc/v2 v2.1.0 // indirect
 	github.com/andybalholm/brotli v1.1.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect

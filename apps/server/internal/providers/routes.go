@@ -18,11 +18,13 @@ package providers
 
 import (
 	"fmt"
+	"net/url"
 	"sort"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/mrsimonemms/cloud-native-auth/apps/server/internal/users"
+	"github.com/mrsimonemms/cloud-native-auth/apps/server/internal/services"
+	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/auth"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/config"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/database"
 	"github.com/mrsimonemms/cloud-native-auth/packages/authentication/v1"
@@ -32,7 +34,7 @@ import (
 type controller struct {
 	cfg         *config.ServerConfig
 	db          database.Driver
-	userService *users.Service
+	userService *services.Users
 }
 
 const callbackCookieKey = "callback"
@@ -41,7 +43,7 @@ func Router(route fiber.Router, cfg *config.ServerConfig, db database.Driver) {
 	p := controller{
 		cfg:         cfg,
 		db:          db,
-		userService: users.NewService(cfg, db),
+		userService: services.NewUsersService(cfg, db),
 	}
 
 	route.Route("/providers", func(router fiber.Router) {
@@ -117,15 +119,33 @@ func (p *controller) LoginToProvider(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusServiceUnavailable, "Error creating user from provider")
 	}
 
-	l.Debug().Msg("Generating the JWT")
+	l.Debug().Msg("Generate the auth token")
+	token, err := auth.GenerateToken(userModel, p.cfg)
+	if err != nil {
+		l.Error().Err(err).Msg("Error generating auth token")
+		return fiber.NewError(fiber.StatusInternalServerError, "Error generating auth token")
+	}
 
 	if redirectURL := c.Cookies(callbackCookieKey); redirectURL != "" {
 		l.Info().Msg("Redirecting to URL with token")
+
+		u, err := url.Parse(redirectURL)
+		if err != nil {
+			l.Error().Err(err).Msg("Error parsing redirect URL")
+			return fiber.NewError(fiber.StatusInternalServerError)
+		}
+
+		q := u.Query()
+		q.Add("token", token)
+		u.RawQuery = q.Encode()
+
+		return c.Redirect(u.String())
 	}
 
 	l.Info().Msg("Outputting the user object")
 	return c.JSON(fiber.Map{
-		"user": userModel,
+		"token": token,
+		"user":  userModel,
 	})
 }
 

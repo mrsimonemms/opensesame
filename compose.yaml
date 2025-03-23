@@ -9,6 +9,7 @@ services:
     environment:
       CONFIG: config.example.yaml
       CONFIG_COOKIE_KEY: RHXV1WDKGoHbcQHy6+RrmqrrznAXixkN8jQBRH4gkxU= # Randomly generated code - openssl rand -base64 32
+      CONFIG_JWT_KEY: q1w2e3r4
       LOG_LEVEL: ${LOG_LEVEL-trace}
     volumes:
       - ./apps:/go/root/apps

@@ -20,8 +20,10 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 	"text/template"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/mrsimonemms/cloud-native-auth/packages/authentication/v1"
@@ -89,6 +91,12 @@ func LoadFromFile(configFile string) (*ServerConfig, error) {
 
 	// Load the default values
 	cfg := ServerConfig{
+		JWT: JWT{
+			ExpiresIn: Duration{
+				Duration: time.Hour * 24 * 30, // 30 days,
+			},
+			Issuer: "cloud-native-auth",
+		},
 		Server: Server{
 			Host: "0.0.0.0",
 			Port: 3000,
@@ -96,8 +104,56 @@ func LoadFromFile(configFile string) (*ServerConfig, error) {
 	}
 
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
-		return nil, fmt.Errorf("unable to unmarshal data")
+		return nil, fmt.Errorf("unable to unmarshal data: %w", err)
 	}
 
 	return &cfg, nil
+}
+
+// ParseDuration parses a duration string.
+// examples: "10d", "-1.5w" or "3Y4M5d".
+// Add time units are "d"="D", "w"="W", "M", "y"="Y".
+// @link https://gist.github.com/xhit/79c9e137e1cfe332076cdda9f5e24699
+func ParseDuration(s string) (time.Duration, error) {
+	neg := false
+	if s != "" && s[0] == '-' {
+		neg = true
+		s = s[1:]
+	}
+
+	re := regexp.MustCompile(`(\d*\.\d+|\d+)\D*`)
+	unitMap := map[string]time.Duration{
+		"d": 24,
+		"D": 24,
+		"w": 7 * 24,
+		"W": 7 * 24,
+		"M": 30 * 24,
+		"y": 365 * 24,
+		"Y": 365 * 24,
+	}
+
+	strs := re.FindAllString(s, -1)
+	var sumDur time.Duration
+	for _, str := range strs {
+		var _hours time.Duration = 1
+		for unit, hours := range unitMap {
+			if strings.Contains(str, unit) {
+				str = strings.ReplaceAll(str, unit, "h")
+				_hours = hours
+				break
+			}
+		}
+
+		dur, err := time.ParseDuration(str)
+		if err != nil {
+			return 0, err
+		}
+
+		sumDur += dur * _hours
+	}
+
+	if neg {
+		sumDur = -sumDur
+	}
+	return sumDur, nil
 }

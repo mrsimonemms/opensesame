@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package users
+package services
 
 import (
 	"context"
@@ -28,12 +28,12 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type Service struct {
+type Users struct {
 	cfg *config.ServerConfig
 	db  database.Driver
 }
 
-func (s *Service) CreateOrUpdateUserFromProvider(
+func (s *Users) CreateOrUpdateUserFromProvider(
 	ctx context.Context,
 	providerID string,
 	providerUser *authentication.User,
@@ -102,8 +102,12 @@ func (s *Service) CreateOrUpdateUserFromProvider(
 	return data, nil
 }
 
-func NewService(cfg *config.ServerConfig, db database.Driver) *Service {
-	return &Service{
+func (s *Users) GetUserByID(ctx context.Context, userID string) (*models.User, error) {
+	return s.db.GetUserByID(ctx, userID)
+}
+
+func NewUsersService(cfg *config.ServerConfig, db database.Driver) *Users {
+	return &Users{
 		cfg: cfg,
 		db:  db,
 	}

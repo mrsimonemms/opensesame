@@ -17,11 +17,16 @@
 package config
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/mrsimonemms/cloud-native-auth/packages/authentication/v1"
+	"sigs.k8s.io/yaml"
 )
 
 type ServerConfig struct {
 	Database  `json:"database" validate:"required"`
+	JWT       `json:"jwt" validate:"required"`
 	Providers []Provider `json:"providers" validate:"required,min=1,dive"`
 	Server    `json:"server" validate:"required"`
 }
@@ -36,6 +41,41 @@ type Database struct {
 	Type DatabaseType `json:"type" validate:"required,oneof=mongodb"`
 
 	MongoDB `json:"mongodb" validate:"required_if=type mongodb"`
+}
+
+type Duration struct {
+	time.Duration
+}
+
+func (d Duration) MarshalJSON() ([]byte, error) {
+	return yaml.Marshal(d.String())
+}
+
+func (d *Duration) UnmarshalJSON(b []byte) error {
+	var v any
+	if err := yaml.Unmarshal(b, &v); err != nil {
+		return err
+	}
+	switch value := v.(type) {
+	case float64:
+		d.Duration = time.Duration(value)
+		return nil
+	case string:
+		var err error
+		d.Duration, err = ParseDuration(value) // Custom ffunc allows days (eg, 30d)
+		if err != nil {
+			return err
+		}
+		return nil
+	default:
+		return fmt.Errorf("invalid duration")
+	}
+}
+
+type JWT struct {
+	ExpiresIn Duration `json:"expiresIn" validate:"required"`
+	Key       []byte   `json:"key" validate:"required,min=6"`
+	Issuer    string   `json:"subject" validate:"required"`
 }
 
 type MongoDB struct {

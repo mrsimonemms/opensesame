@@ -3,6 +3,8 @@ database:
   mongodb:
     connectionURI: mongodb://mongodb:27017
     database: auth
+jwt:
+  key: "{{ .CONFIG_JWT_KEY }}"
 providers:
   - id: github
     name: GitHub

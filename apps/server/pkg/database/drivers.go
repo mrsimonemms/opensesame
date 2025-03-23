@@ -39,6 +39,9 @@ type Driver interface {
 	// Find the user by the provider and provider user ID
 	FindUserByProviderAndUserID(ctx context.Context, providerID, providerUserID string) (user *models.User, err error)
 
+	// Get the user by ID
+	GetUserByID(ctx context.Context, userID string) (user *models.User, err error)
+
 	// Save the user record to the database
 	SaveUserRecord(ctx context.Context, model *models.User) (user *models.User, err error)
 }
