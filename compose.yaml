@@ -85,7 +85,8 @@ services:
   gobblr:
     image: ghcr.io/mrsimonemms/gobblr
     environment:
-      GOBBLR_CONNECTION_URI: mongodb://mongodb:27017/auth
+      GOBBLR_CONNECTION_URI: mongodb://mongodb:27017
+      GOBBLR_DATABASE: auth
     ports:
       - 4001:5670
     links:
