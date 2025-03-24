@@ -160,6 +160,58 @@ func (db *MongoDB) SaveUserRecord(ctx context.Context, model *models.User) (*mod
 	return mongoModel.toModel(), nil
 }
 
+func (db *MongoDB) UpdateAllUsers(
+	ctx context.Context,
+	update func(existing []*models.User) (updated []*models.User, err error),
+) (int64, error) {
+	collection := db.activeConnection.db.Collection(UsersCollection)
+	filter := bson.D{}
+
+	cursor, err := collection.Find(ctx, filter)
+	if err != nil {
+		return 0, fmt.Errorf("error retrieving all user records: %w", err)
+	}
+
+	var mongodbUsers []*user
+	if err := cursor.All(ctx, &mongodbUsers); err != nil {
+		return 0, fmt.Errorf("error getting all user records in cursor: %w", err)
+	}
+
+	users := make([]*models.User, 0)
+	for _, u := range mongodbUsers {
+		users = append(users, u.toModel())
+	}
+
+	updatedRecords, err := update(users)
+	if err != nil {
+		return 0, fmt.Errorf("error generating updated user records: %w", err)
+	}
+
+	models := []mongo.WriteModel{}
+	for _, model := range updatedRecords {
+		s, err := userToMongo(model)
+		if err != nil {
+			return 0, fmt.Errorf("error converting user to mongo model: %w", err)
+		}
+
+		models = append(models, mongo.NewUpdateOneModel().
+			SetFilter(bson.D{
+				{
+					Key:   "_id",
+					Value: s.ID,
+				},
+			}).SetUpdate(bson.M{"$set": s}),
+		)
+	}
+
+	result, err := collection.BulkWrite(ctx, models)
+	if err != nil {
+		return 0, fmt.Errorf("error updating user records: %w", err)
+	}
+
+	return result.ModifiedCount, nil
+}
+
 func New(cfg config.MongoDB) *MongoDB {
 	return &MongoDB{
 		connectionURI: cfg.ConnectionURI,

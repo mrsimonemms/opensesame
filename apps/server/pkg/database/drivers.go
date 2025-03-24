@@ -44,6 +44,9 @@ type Driver interface {
 
 	// Save the user record to the database
 	SaveUserRecord(ctx context.Context, model *models.User) (user *models.User, err error)
+
+	// Updates all users - used when rotating keys
+	UpdateAllUsers(ctx context.Context, update func(existing []*models.User) (updated []*models.User, err error)) (count int64, err error)
 }
 
 func New(cfg *config.ServerConfig) (Driver, error) {

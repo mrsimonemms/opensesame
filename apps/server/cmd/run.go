@@ -30,35 +30,45 @@ var runOpts struct {
 	ConfigFile string
 }
 
+func loadConfig(configFile string) *config.ServerConfig {
+	cfg, err := config.LoadFromFile(configFile)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Error loading config")
+	}
+
+	if err := cfg.Validate(); err != nil {
+		log.Fatal().Err(err).Msg("Invalid config")
+	}
+
+	if err := cfg.ConnectProviders(); err != nil {
+		log.Fatal().Err(err).Msg("Unable to connect to providers")
+	}
+
+	return cfg
+}
+
+func connectToDatabase(ctx context.Context, cfg *config.ServerConfig) database.Driver {
+	db, err := database.New(cfg)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Database connection error")
+	}
+
+	log.Debug().Msg("Connecting to database")
+	if err := db.Connect(ctx); err != nil {
+		log.Fatal().Err(err).Msg("Error connecting to database")
+	}
+
+	return db
+}
+
 // runCmd represents the run command
 var runCmd = &cobra.Command{
 	Use:   "run",
 	Short: "Starts the service",
 	Run: func(cmd *cobra.Command, args []string) {
-		cfg, err := config.LoadFromFile(runOpts.ConfigFile)
-		if err != nil {
-			log.Fatal().Err(err).Msg("Error loading config")
-		}
-
-		if err := cfg.Validate(); err != nil {
-			log.Fatal().Err(err).Msg("Invalid config")
-		}
-
-		if err := cfg.ConnectProviders(); err != nil {
-			log.Fatal().Err(err).Msg("Unable to connect to providers")
-		}
-
-		db, err := database.New(cfg)
-		if err != nil {
-			log.Fatal().Err(err).Msg("Database connection error")
-		}
-
 		ctx := context.Background()
-
-		log.Debug().Msg("Connecting to database")
-		if err := db.Connect(ctx); err != nil {
-			log.Fatal().Err(err).Msg("Error connecting to database")
-		}
+		cfg := loadConfig(runOpts.ConfigFile)
+		db := connectToDatabase(ctx, cfg)
 
 		defer db.Close(ctx)
 
