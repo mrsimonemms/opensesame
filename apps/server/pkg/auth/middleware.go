@@ -42,7 +42,11 @@ func VerifyRBACPermissions(cfg *config.ServerConfig, db database.Driver) func(*f
 }
 
 // Verifies the user's identity - errors with 401
-func VerifyUser(cfg *config.ServerConfig, db database.Driver) func(*fiber.Ctx) error {
+func VerifyUser(cfg *config.ServerConfig, db database.Driver, isOptional ...bool) func(*fiber.Ctx) error {
+	if len(isOptional) == 0 {
+		isOptional = []bool{false}
+	}
+
 	usersService := services.NewUsersService(cfg, db)
 
 	return func(c *fiber.Ctx) error {
@@ -55,21 +59,31 @@ func VerifyUser(cfg *config.ServerConfig, db database.Driver) func(*fiber.Ctx) e
 
 		return jwtware.New(jwtware.Config{
 			ContextKey:     jwtContextKey,
-			ErrorHandler:   authErrorHandler,
-			SuccessHandler: authSuccessHandler(cfg, usersService),
+			ErrorHandler:   authErrorHandler(isOptional[0]),
+			SuccessHandler: authSuccessHandler(cfg, usersService, isOptional[0]),
 			SigningKey:     jwtware.SigningKey{Key: cfg.JWT.Key},
 			TokenLookup:    tokenLookup,
 		})(c)
 	}
 }
 
-func authErrorHandler(c *fiber.Ctx, err error) error {
-	log.Debug().Err(err).Msg("Error validating user")
+func optionalErrorHandler(c *fiber.Ctx, isOptional bool) error {
+	if isOptional {
+		return c.Next()
+	}
 
 	return fiber.ErrUnauthorized
 }
 
-func authSuccessHandler(cfg *config.ServerConfig, usersService *services.Users) func(c *fiber.Ctx) error {
+func authErrorHandler(isOptional bool) func(c *fiber.Ctx, err error) error {
+	return func(c *fiber.Ctx, err error) error {
+		log.Debug().Err(err).Msg("Error validating user")
+
+		return optionalErrorHandler(c, isOptional)
+	}
+}
+
+func authSuccessHandler(cfg *config.ServerConfig, usersService *services.Users, isOptional bool) func(c *fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		token := c.Locals(jwtContextKey).(*jwt.Token)
 
@@ -78,47 +92,47 @@ func authSuccessHandler(cfg *config.ServerConfig, usersService *services.Users) 
 		expiry, err := token.Claims.GetExpirationTime()
 		if err != nil {
 			log.Debug().Err(err).Msg("Error retrieving expiry from JWT")
-			return fiber.ErrUnauthorized
+			return optionalErrorHandler(c, isOptional)
 		}
 		if expiry == nil || expiry.Before(now) {
 			log.Debug().Msg("Token expiry invalid or expired")
-			return fiber.ErrUnauthorized
+			return optionalErrorHandler(c, isOptional)
 		}
 
 		notBefore, err := token.Claims.GetNotBefore()
 		if err != nil {
 			log.Debug().Err(err).Msg("Error retrieving not before from JWT")
-			return fiber.ErrUnauthorized
+			return optionalErrorHandler(c, isOptional)
 		}
 		if notBefore == nil || notBefore.After(now) {
 			log.Debug().Msg("Token not before invalid or expired")
-			return fiber.ErrUnauthorized
+			return optionalErrorHandler(c, isOptional)
 		}
 
 		issuer, err := token.Claims.GetIssuer()
 		if err != nil {
 			log.Debug().Err(err).Msg("Error retrieving issuer from JWT")
-			return fiber.ErrUnauthorized
+			return optionalErrorHandler(c, isOptional)
 		}
 		if issuer != cfg.JWT.Issuer {
 			log.Debug().Msg("Token issuer invalid")
-			return fiber.ErrUnauthorized
+			return optionalErrorHandler(c, isOptional)
 		}
 
 		userID, err := token.Claims.GetSubject()
 		if err != nil {
 			log.Debug().Err(err).Msg("Error retrieving user ID from JWT")
-			return fiber.ErrUnauthorized
+			return optionalErrorHandler(c, isOptional)
 		}
 
 		user, err := usersService.GetUserByID(c.Context(), userID)
 		if err != nil {
 			log.Error().Err(err).Msg("Error retrieving user by ID")
-			return fiber.ErrUnauthorized
+			return optionalErrorHandler(c, isOptional)
 		}
 		if user == nil {
 			log.Debug().Msg("No user found")
-			return fiber.ErrUnauthorized
+			return optionalErrorHandler(c, isOptional)
 		}
 
 		log.Debug().Msg("User found and saved to context")

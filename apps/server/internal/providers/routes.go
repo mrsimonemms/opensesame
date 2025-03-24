@@ -48,8 +48,18 @@ func Router(route fiber.Router, cfg *config.ServerConfig, db database.Driver) {
 
 	route.Route("/providers", func(router fiber.Router) {
 		router.Get("/", p.ListProviders)
-		router.Get("/:providerID/login", p.IsRouteEnabled(authentication.Route_ROUTE_LOGIN_GET), p.LoginToProvider)
-		router.Post("/:providerID/login", p.IsRouteEnabled(authentication.Route_ROUTE_LOGIN_POST), p.LoginToProvider)
+		router.Get(
+			"/:providerID/login",
+			p.IsRouteEnabled(authentication.Route_ROUTE_LOGIN_GET),
+			auth.VerifyUser(p.cfg, p.db, true),
+			p.LoginToProvider,
+		)
+		router.Post(
+			"/:providerID/login",
+			p.IsRouteEnabled(authentication.Route_ROUTE_LOGIN_POST),
+			auth.VerifyUser(p.cfg, p.db, true),
+			p.LoginToProvider,
+		)
 		router.Get("/:providerID/login/callback", p.IsRouteEnabled(authentication.Route_ROUTE_CALLBACK_GET), p.LoginToProvider)
 	})
 }
