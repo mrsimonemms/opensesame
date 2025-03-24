@@ -113,7 +113,7 @@ func New(cfg *config.ServerConfig, db database.Driver) *Server {
 			log.Debug().
 				Interface("requestid", c.Locals(requestid.ConfigDefault.ContextKey)).
 				Str("method", c.Method()).
-				Str("url", c.OriginalURL()).
+				Bytes("url", c.Request().URI().Path()). // Avoid logging any sensitive credentials
 				Msg("New route called")
 			return c.Next()
 		}).
