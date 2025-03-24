@@ -20,6 +20,7 @@ services:
       - gobblr
       - mongodb
       - provider-github
+      - provider-gitlab
     restart: on-failure
     command: air -build.args_bin run
 
@@ -44,6 +45,27 @@ services:
       - ./packages/js-sdk:/home/node/root/apps/provider-github/node_modules/@cloud-native-auth/js-sdk
     ports:
       - 3000:3000
+    restart: on-failure
+    depends_on:
+      - js-sdk
+
+  provider-gitlab:
+    build:
+      context: .
+      dockerfile: ./apps/node.Dockerfile
+      target: dev
+      args:
+        APP: provider-gitlab
+    environment:
+      CLIENT_ID: ${GITLAB_CLIENT_ID}
+      CLIENT_SECRET: ${GITLAB_CLIENT_SECRET}
+      CALLBACK_URL: http://localhost:9000/v1/providers/gitlab/login/callback
+    volumes:
+      - ./apps:/home/node/root/apps
+      - ./proto:/home/node/root/proto
+      - ./packages/js-sdk:/home/node/root/apps/provider-github/node_modules/@cloud-native-auth/js-sdk
+    ports:
+      - 3001:3000
     restart: on-failure
     depends_on:
       - js-sdk
