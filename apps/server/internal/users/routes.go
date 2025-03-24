@@ -24,7 +24,7 @@ import (
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/config"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/database"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/models"
-	"github.com/rs/zerolog/log"
+	"github.com/rs/zerolog"
 )
 
 type controller struct {
@@ -45,6 +45,7 @@ func Router(route fiber.Router, cfg *config.ServerConfig, db database.Driver) {
 
 func (p *controller) GetUser(c *fiber.Ctx) error {
 	user := c.Locals(auth.UserContextKey).(*models.User)
+	log := c.Locals("logger").(zerolog.Logger)
 
 	for _, a := range user.Accounts {
 		if err := a.DecryptTokens(p.cfg); err != nil {

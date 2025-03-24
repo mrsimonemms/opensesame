@@ -110,11 +110,16 @@ func New(cfg *config.ServerConfig, db database.Driver) *Server {
 	app.
 		Use(requestid.New()).
 		Use(func(c *fiber.Ctx) error {
-			log.Debug().
+			l := log.With().
 				Interface("requestid", c.Locals(requestid.ConfigDefault.ContextKey)).
 				Str("method", c.Method()).
 				Bytes("url", c.Request().URI().Path()). // Avoid logging any sensitive credentials
-				Msg("New route called")
+				Logger()
+
+			c.Locals("logger", l)
+
+			l.Debug().Msg("New route called")
+
 			return c.Next()
 		}).
 		Use(recover.New()).

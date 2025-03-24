@@ -28,7 +28,7 @@ import (
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/config"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/database"
 	"github.com/mrsimonemms/cloud-native-auth/packages/authentication/v1"
-	"github.com/rs/zerolog/log"
+	"github.com/rs/zerolog"
 )
 
 type controller struct {
@@ -73,6 +73,7 @@ func (p *controller) ListProviders(c *fiber.Ctx) error {
 }
 
 func (p *controller) LoginToProvider(c *fiber.Ctx) error {
+	log := c.Locals("logger").(zerolog.Logger)
 	if callbackURL := c.Query("callback", ""); callbackURL != "" {
 		// Set a callback URL for after a success resolution
 		log.Debug().Msg("Setting callback cookie")
@@ -153,6 +154,8 @@ func (p *controller) IsRouteEnabled(route authentication.Route) func(c *fiber.Ct
 	return func(c *fiber.Ctx) error {
 		providerID := c.Params("providerID")
 		provider := FindProvider(p.cfg.Providers, providerID)
+
+		log := c.Locals("logger").(zerolog.Logger)
 
 		l := log.With().Str("providerID", provider.ID).Str("route", route.String()).Logger()
 
