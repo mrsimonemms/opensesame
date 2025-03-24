@@ -94,6 +94,13 @@ func (s *Users) CreateOrUpdateUserFromProvider(
 	}
 	userModel.UpdatedDate = now
 
+	for _, a := range userModel.Accounts {
+		if err := a.EncryptTokens(s.cfg); err != nil {
+			log.Error().Err(err).Msg("Error encrypting account tokens")
+			return nil, fmt.Errorf("error encrypting account tokens: %w", err)
+		}
+	}
+
 	data, err := s.db.SaveUserRecord(ctx, userModel)
 	if err != nil {
 		return nil, fmt.Errorf("error saving user record: %w", err)

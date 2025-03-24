@@ -16,11 +16,16 @@
 
 package models
 
-import "time"
+import (
+	"fmt"
+	"time"
+
+	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/config"
+)
 
 type ProviderUser struct {
 	ID             string            `json:"-"`
-	Tokens         map[string]string `json:"tokens"` // This is highly sensitive
+	Tokens         map[string]string `json:"tokens"` // This is highly sensitive so will only be exported encrypted
 	ProviderID     string            `json:"providerId"`
 	ProviderUserID string            `json:"providerUserId"`
 	EmailAddress   *string           `json:"emailAddress"`
@@ -28,6 +33,32 @@ type ProviderUser struct {
 	Username       *string           `json:"username"`
 	CreatedDate    time.Time         `json:"createdDate"`
 	UpdatedDate    time.Time         `json:"updatedDate"`
+}
+
+func (p *ProviderUser) DecryptTokens(cfg *config.ServerConfig) error {
+	for k, v := range p.Tokens {
+		encrypted, err := decrypt(v, cfg.Encryption.Key)
+		if err != nil {
+			return fmt.Errorf("error decrypting provider token: %w", err)
+		}
+
+		p.Tokens[k] = string(encrypted)
+	}
+
+	return nil
+}
+
+func (p *ProviderUser) EncryptTokens(cfg *config.ServerConfig) error {
+	for k, v := range p.Tokens {
+		encrypted, err := encrypt(v, cfg.Encryption.Key)
+		if err != nil {
+			return fmt.Errorf("error encrypting provider token: %w", err)
+		}
+
+		p.Tokens[k] = string(encrypted)
+	}
+
+	return nil
 }
 
 type User struct {

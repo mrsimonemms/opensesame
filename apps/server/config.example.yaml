@@ -3,6 +3,8 @@ database:
   mongodb:
     connectionURI: mongodb://mongodb:27017
     database: auth
+encryption:
+  key: "{{ .CONFIG_ENCRYPTION_KEY }}"
 jwt:
   key: "{{ .CONFIG_JWT_KEY }}"
 providers:

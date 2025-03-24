@@ -17,11 +17,14 @@
 package users
 
 import (
+	"fmt"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/auth"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/config"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/database"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/models"
+	"github.com/rs/zerolog/log"
 )
 
 type controller struct {
@@ -41,7 +44,16 @@ func Router(route fiber.Router, cfg *config.ServerConfig, db database.Driver) {
 }
 
 func (p *controller) GetUser(c *fiber.Ctx) error {
+	user := c.Locals(auth.UserContextKey).(*models.User)
+
+	for _, a := range user.Accounts {
+		if err := a.DecryptTokens(p.cfg); err != nil {
+			log.Error().Err(err).Str("providerID", a.ProviderID).Msg("Error decrypting provider token")
+			return fiber.NewError(fiber.StatusInternalServerError, fmt.Sprintf("Error decrypting provider token: %s", a.ProviderID))
+		}
+	}
+
 	return c.JSON(fiber.Map{
-		"user": c.Locals(auth.UserContextKey).(*models.User),
+		"user": user,
 	})
 }

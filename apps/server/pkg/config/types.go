@@ -25,10 +25,11 @@ import (
 )
 
 type ServerConfig struct {
-	Database  `json:"database" validate:"required"`
-	JWT       `json:"jwt" validate:"required"`
-	Providers []Provider `json:"providers" validate:"required,min=1,dive"`
-	Server    `json:"server" validate:"required"`
+	Database   `json:"database" validate:"required"`
+	Encryption `json:"encryption" validate:"required"`
+	JWT        `json:"jwt" validate:"required"`
+	Providers  []Provider `json:"providers" validate:"required,min=1,dive"`
+	Server     `json:"server" validate:"required"`
 }
 
 type DatabaseType string
@@ -70,6 +71,10 @@ func (d *Duration) UnmarshalJSON(b []byte) error {
 	default:
 		return fmt.Errorf("invalid duration")
 	}
+}
+
+type Encryption struct {
+	Key string `json:"key" validate:"required,min=12"`
 }
 
 type JWT struct {
