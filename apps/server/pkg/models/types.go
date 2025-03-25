@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/config"
+	"github.com/mrsimonemms/cloud-native-auth/packages/authentication/v1"
 )
 
 type ProviderUser struct {
@@ -69,4 +70,13 @@ type User struct {
 	IsActive     bool            `json:"isActive"`
 	CreatedDate  time.Time       `json:"createdDate"`
 	UpdatedDate  time.Time       `json:"updatedDate"`
+}
+
+func (u *User) AddProvider(provider *authentication.User) {}
+
+func NewUser() *User {
+	return &User{
+		IsActive:    true, // Default to true
+		CreatedDate: time.Now(),
+	}
 }

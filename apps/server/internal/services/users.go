@@ -19,7 +19,6 @@ package services
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/config"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/database"
@@ -37,69 +36,77 @@ func (s *Users) CreateOrUpdateUserFromProvider(
 	ctx context.Context,
 	providerID string,
 	providerUser *authentication.User,
+	existingUserID *string,
 ) (*models.User, error) {
+	fmt.Println(existingUserID)
+
 	userModel, err := s.db.FindUserByProviderAndUserID(ctx, providerID, providerUser.ProviderId)
 	if err != nil {
 		return nil, fmt.Errorf("error getting user by provider and user id: %w", err)
 	}
 
-	now := time.Now()
+	// now := time.Now()
 
 	if userModel == nil {
 		log.Debug().Msg("No user found - creating")
-		userModel = &models.User{
-			IsActive:    true, // Default to true
-			CreatedDate: now,
-		}
+		userModel = models.NewUser()
+		// userModel = &models.User{
+		// 	IsActive:    true, // Default to true
+		// 	CreatedDate: now,
+		// }
 
-		// Add email and name from the provider user - it's not guaranteed to be present
-		if providerUser.EmailAddress != nil {
-			userModel.EmailAddress = *providerUser.EmailAddress
-		}
-		if providerUser.Name != nil {
-			userModel.Name = *providerUser.Name
-		}
-	}
-
-	// Search for provider account in slice
-	var accountID *int
-	for k, account := range userModel.Accounts {
-		if account.ProviderID == providerID && account.ProviderUserID == providerUser.ProviderId {
-			accountID = &k
-		}
-	}
-
-	accountRecord := models.ProviderUser{
-		Tokens:         providerUser.Tokens,
-		ProviderID:     providerID,
-		ProviderUserID: providerUser.ProviderId,
-		EmailAddress:   providerUser.EmailAddress,
-		Name:           providerUser.Name,
-		Username:       providerUser.Username,
-		UpdatedDate:    now,
-	}
-
-	if accountID == nil {
-		log.Debug().Msg("Adding new account record")
-		accountRecord.CreatedDate = now
-		userModel.Accounts = append(userModel.Accounts, &accountRecord)
+		// // Add email and name from the provider user - it's not guaranteed to be present
+		// if providerUser.EmailAddress != nil {
+		// 	userModel.EmailAddress = *providerUser.EmailAddress
+		// }
+		// if providerUser.Name != nil {
+		// 	userModel.Name = *providerUser.Name
+		// }
 	} else {
-		log.Debug().Int("accountID", *accountID).Msg("Updating account record")
-
-		// Set the extant records
-		accountRecord.ID = userModel.Accounts[*accountID].ID
-		accountRecord.CreatedDate = userModel.Accounts[*accountID].CreatedDate
-
-		userModel.Accounts[*accountID] = &accountRecord
+		log.Debug().Msg("Provider already registered with user - update")
 	}
-	userModel.UpdatedDate = now
 
-	for _, a := range userModel.Accounts {
-		if err := a.EncryptTokens(s.cfg); err != nil {
-			log.Error().Err(err).Msg("Error encrypting account tokens")
-			return nil, fmt.Errorf("error encrypting account tokens: %w", err)
-		}
-	}
+	userModel.AddProvider(providerUser)
+
+	// // Search for provider account in slice
+	// var accountID *int
+	// for k, account := range userModel.Accounts {
+	// 	if account.ProviderID == providerID && account.ProviderUserID == providerUser.ProviderId {
+	// 		accountID = &k
+	// 	}
+	// }
+
+	// accountRecord := models.ProviderUser{
+	// 	Tokens:         providerUser.Tokens,
+	// 	ProviderID:     providerID,
+	// 	ProviderUserID: providerUser.ProviderId,
+	// 	EmailAddress:   providerUser.EmailAddress,
+	// 	Name:           providerUser.Name,
+	// 	Username:       providerUser.Username,
+	// 	UpdatedDate:    now,
+	// }
+
+	// if accountID == nil {
+	// 	log.Debug().Msg("Adding new account record")
+	// 	accountRecord.CreatedDate = now
+	// 	userModel.Accounts = append(userModel.Accounts, &accountRecord)
+	// } else {
+	// 	log.Debug().Int("accountID", *accountID).Msg("Updating account record")
+
+	// 	// Set the extant records
+	// 	accountRecord.ID = userModel.Accounts[*accountID].ID
+	// 	accountRecord.CreatedDate = userModel.Accounts[*accountID].CreatedDate
+
+	// 	userModel.Accounts[*accountID] = &accountRecord
+	// }
+	// userModel.UpdatedDate = now
+
+	// for _, a := range userModel.Accounts {
+	// 	if err := a.EncryptTokens(s.cfg); err != nil {
+	// 		log.Error().Err(err).Msg("Error encrypting account tokens")
+	// 		return nil, fmt.Errorf("error encrypting account tokens: %w", err)
+	// 	}
+	// }
 
 	data, err := s.db.SaveUserRecord(ctx, userModel)
 	if err != nil {
