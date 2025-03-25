@@ -70,7 +70,7 @@ type User struct {
 }
 
 func (u *User) AddProvider(providerID string, providerUser *authentication.User) {
-	if u.Accounts[providerID] == nil {
+	if u.Accounts == nil {
 		u.Accounts = map[string]*ProviderAccount{}
 	}
 

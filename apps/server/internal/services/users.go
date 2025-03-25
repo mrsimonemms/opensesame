@@ -36,7 +36,9 @@ func (s *Users) CreateOrUpdateUserFromProvider(
 	ctx context.Context,
 	providerID string,
 	providerUser *authentication.User,
+	existingUserID *string,
 ) (*models.User, error) {
+	// Search for an existing user
 	userModel, err := s.db.FindUserByProviderAndUserID(ctx, providerID, providerUser.ProviderId)
 	if err != nil {
 		return nil, fmt.Errorf("error getting user by provider and user id: %w", err)
@@ -52,6 +54,33 @@ func (s *Users) CreateOrUpdateUserFromProvider(
 		}
 		if name := providerUser.Name; name != nil {
 			userModel.Name = *name
+		}
+	}
+
+	if existingUserID != nil {
+		log.Info().Str("userID", *existingUserID).Msg("Linking provider to user")
+		targetUser, err := s.db.GetUserByID(ctx, *existingUserID)
+		if err != nil {
+			return nil, fmt.Errorf("error getting existing user by id: %w", err)
+		}
+		if targetUser == nil {
+			return nil, fmt.Errorf("unknown user: %s", *existingUserID)
+		}
+
+		// Check if the tokens are used for a different account
+		if userModel.ID == targetUser.ID {
+			return nil, fmt.Errorf("provider registered with other user")
+		}
+
+		// Use the existing user from now on
+		userModel = targetUser
+
+		// Decode the tokens
+		for _, a := range userModel.Accounts {
+			if err := a.DecryptTokens(s.cfg); err != nil {
+				log.Error().Err(err).Msg("Error decrypting account tokens")
+				return nil, fmt.Errorf("error decrypting account tokens: %w", err)
+			}
 		}
 	}
 

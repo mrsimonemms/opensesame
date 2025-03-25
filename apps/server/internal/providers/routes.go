@@ -27,6 +27,7 @@ import (
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/auth"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/config"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/database"
+	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/models"
 	"github.com/mrsimonemms/cloud-native-auth/packages/authentication/v1"
 	"github.com/rs/zerolog"
 )
@@ -37,7 +38,10 @@ type controller struct {
 	userService *services.Users
 }
 
-const callbackCookieKey = "callback"
+const (
+	callbackCookieKey     = "callback"
+	existingUserCookieKey = "userID"
+)
 
 func Router(route fiber.Router, cfg *config.ServerConfig, db database.Driver) {
 	p := controller{
@@ -83,23 +87,9 @@ func (p *controller) ListProviders(c *fiber.Ctx) error {
 }
 
 func (p *controller) LoginToProvider(c *fiber.Ctx) error {
+	handleInputCookies(c)
+
 	log := c.Locals("logger").(zerolog.Logger)
-	if callbackURL := c.Query("callback", ""); callbackURL != "" {
-		// Set a callback URL for after a success resolution
-		log.Debug().Msg("Setting callback cookie")
-		c.Cookie(&fiber.Cookie{
-			Name:  callbackCookieKey,
-			Value: callbackURL,
-		})
-	} else {
-		log.Debug().Msg("Clearing callback cookie")
-		// The c.ClearCookie function doesn't seem to work with encrypt cookie
-		c.Cookie(&fiber.Cookie{
-			Name:    callbackCookieKey,
-			Expires: time.Now().Add(-time.Hour * 24),
-			Value:   "",
-		})
-	}
 
 	providerID := c.Params("providerID")
 	provider := FindProvider(p.cfg.Providers, providerID)
@@ -111,20 +101,25 @@ func (p *controller) LoginToProvider(c *fiber.Ctx) error {
 	l := log.With().Str("providerID", providerID).Logger()
 
 	l.Debug().Msg("Authenticating against provider")
-	user, err := Authenticate(c, *provider)
+	providerUser, err := Authenticate(c, *provider)
 	if err != nil {
 		l.Error().Err(err).Msg("Error authenticating provider")
 		return err
 	}
-	if user == nil {
+	if providerUser == nil {
 		// The webpage has successfully resolved - nothing to do
 		return nil
 	}
 
 	l.Info().Msg("User authenticated by provider - saving to database")
+	var existingUserID *string
+	if userID := c.Cookies(existingUserCookieKey); userID != "" {
+		l.Info().Str("existingUserID", userID).Msg("Existing user cookie found")
+		existingUserID = &userID
+	}
 
 	l.Debug().Msg("Triggering user upsert")
-	userModel, err := p.userService.CreateOrUpdateUserFromProvider(c.Context(), providerID, user)
+	userModel, err := p.userService.CreateOrUpdateUserFromProvider(c.Context(), providerID, providerUser, existingUserID)
 	if err != nil {
 		l.Error().Err(err).Msg("Error creating user from provider")
 		return fiber.NewError(fiber.StatusServiceUnavailable, "Error creating user from provider")
@@ -193,5 +188,46 @@ func (p *controller) IsRouteEnabled(route authentication.Route) func(c *fiber.Ct
 		l.Debug().Msg("Route disabled")
 
 		return fiber.ErrNotFound
+	}
+}
+
+func handleInputCookies(c *fiber.Ctx) {
+	log := c.Locals("logger").(zerolog.Logger)
+
+	// Check if there is an existing user loaded
+	if u := c.Locals(auth.UserContextKey); u != nil {
+		// existingUserModel =
+		existingUserID := (u.(*models.User)).ID
+		log.Debug().Str("userID", existingUserID).Msg("Setting user ID to cookie")
+
+		c.Cookie(&fiber.Cookie{
+			Name:  existingUserCookieKey,
+			Value: existingUserID,
+		})
+	} else {
+		log.Debug().Msg("Clearing user ID cookie")
+		// The c.ClearCookie function doesn't seem to work with encrypt cookie
+		c.Cookie(&fiber.Cookie{
+			Name:    existingUserCookieKey,
+			Expires: time.Now().Add(-time.Hour * 24),
+			Value:   "",
+		})
+	}
+
+	if callbackURL := c.Query("callback", ""); callbackURL != "" {
+		// Set a callback URL for after a success resolution
+		log.Debug().Msg("Setting callback cookie")
+		c.Cookie(&fiber.Cookie{
+			Name:  callbackCookieKey,
+			Value: callbackURL,
+		})
+	} else {
+		log.Debug().Msg("Clearing callback cookie")
+		// The c.ClearCookie function doesn't seem to work with encrypt cookie
+		c.Cookie(&fiber.Cookie{
+			Name:    callbackCookieKey,
+			Expires: time.Now().Add(-time.Hour * 24),
+			Value:   "",
+		})
 	}
 }
