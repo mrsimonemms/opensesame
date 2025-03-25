@@ -28,65 +28,56 @@ import (
 
 type providerUser struct {
 	Tokens         map[string]string `bson:"tokens"`
-	ProviderID     string            `bson:"providerId"`
 	ProviderUserID string            `bson:"providerUserId"`
 	EmailAddress   *string           `bson:"emailAddress"`
 	Name           *string           `bson:"name"`
 	Username       *string           `bson:"username"`
-	CreatedDate    time.Time         `bson:"createdDate"`
-	UpdatedDate    time.Time         `bson:"updatedDate"`
 }
 
-func (p *providerUser) toModel() *models.ProviderUser {
-	return &models.ProviderUser{
+func (p *providerUser) toModel() *models.ProviderAccount {
+	return &models.ProviderAccount{
 		Tokens:         p.Tokens,
-		ProviderID:     p.ProviderID,
 		ProviderUserID: p.ProviderUserID,
 		EmailAddress:   p.EmailAddress,
 		Name:           p.Name,
 		Username:       p.Username,
-		CreatedDate:    p.CreatedDate,
-		UpdatedDate:    p.UpdatedDate,
 	}
 }
 
-func providerUserToMongo(p *models.ProviderUser) *providerUser {
+func providerUserToMongo(p *models.ProviderAccount) *providerUser {
 	return &providerUser{
 		Tokens:         p.Tokens,
-		ProviderID:     p.ProviderID,
 		ProviderUserID: p.ProviderUserID,
 		EmailAddress:   p.EmailAddress,
 		Name:           p.Name,
 		Username:       p.Username,
-		CreatedDate:    p.CreatedDate,
-		UpdatedDate:    p.UpdatedDate,
 	}
 }
 
 // User-mapped model
 
 type user struct {
-	ID           bson.ObjectID   `bson:"_id,omitempty"`
-	EmailAddress string          `bson:"emailAddress"`
-	Name         string          `bson:"name"`
-	Accounts     []*providerUser `bson:"accounts"`
-	IsActive     bool            `bson:"isActive"`
-	CreatedDate  time.Time       `bson:"createdDate"`
-	UpdatedDate  time.Time       `bson:"updatedDate"`
+	ID           bson.ObjectID            `bson:"_id,omitempty"`
+	EmailAddress string                   `bson:"emailAddress"`
+	Name         string                   `bson:"name"`
+	Accounts     map[string]*providerUser `bson:"accounts"`
+	IsActive     bool                     `bson:"isActive"`
+	CreatedDate  time.Time                `bson:"createdDate"`
+	UpdatedDate  time.Time                `bson:"updatedDate"`
 }
 
 func (u *user) toModel() *models.User {
 	m := &models.User{
 		EmailAddress: u.EmailAddress,
 		Name:         u.Name,
-		Accounts:     []*models.ProviderUser{},
+		Accounts:     map[string]*models.ProviderAccount{},
 		IsActive:     u.IsActive,
 		CreatedDate:  u.CreatedDate,
 		UpdatedDate:  u.UpdatedDate,
 	}
 
-	for _, i := range u.Accounts {
-		m.Accounts = append(m.Accounts, i.toModel())
+	for providerID, i := range u.Accounts {
+		m.Accounts[providerID] = i.toModel()
 	}
 
 	if !u.ID.IsZero() {
@@ -100,14 +91,14 @@ func userToMongo(m *models.User) (*user, error) {
 	u := &user{
 		EmailAddress: m.EmailAddress,
 		Name:         m.Name,
-		Accounts:     []*providerUser{},
+		Accounts:     map[string]*providerUser{},
 		IsActive:     m.IsActive,
 		CreatedDate:  m.CreatedDate,
 		UpdatedDate:  m.UpdatedDate,
 	}
 
-	for _, i := range m.Accounts {
-		u.Accounts = append(u.Accounts, providerUserToMongo(i))
+	for providerID, i := range m.Accounts {
+		u.Accounts[providerID] = providerUserToMongo(i)
 	}
 
 	if m.ID != "" {

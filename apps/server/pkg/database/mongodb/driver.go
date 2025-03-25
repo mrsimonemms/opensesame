@@ -87,11 +87,7 @@ func (db *MongoDB) Connect(ctx context.Context) error {
 func (db *MongoDB) FindUserByProviderAndUserID(ctx context.Context, providerID, providerUserID string) (*models.User, error) {
 	filter := bson.D{
 		{
-			Key:   "accounts.providerId",
-			Value: providerID,
-		},
-		{
-			Key:   "accounts.providerUserId",
+			Key:   fmt.Sprintf("accounts.%s.providerUserId", providerID),
 			Value: providerUserID,
 		},
 	}

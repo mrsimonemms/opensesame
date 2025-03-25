@@ -19,7 +19,6 @@ package services
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/config"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/database"
@@ -43,56 +42,20 @@ func (s *Users) CreateOrUpdateUserFromProvider(
 		return nil, fmt.Errorf("error getting user by provider and user id: %w", err)
 	}
 
-	now := time.Now()
-
 	if userModel == nil {
 		log.Debug().Msg("No user found - creating")
-		userModel = &models.User{
-			IsActive:    true, // Default to true
-			CreatedDate: now,
-		}
+		userModel = models.NewUser()
 
-		// Add email and name from the provider user - it's not guaranteed to be present
-		if providerUser.EmailAddress != nil {
-			userModel.EmailAddress = *providerUser.EmailAddress
+		// Add in default values
+		if email := providerUser.EmailAddress; email != nil {
+			userModel.EmailAddress = *email
 		}
-		if providerUser.Name != nil {
-			userModel.Name = *providerUser.Name
+		if name := providerUser.Name; name != nil {
+			userModel.Name = *name
 		}
 	}
 
-	// Search for provider account in slice
-	var accountID *int
-	for k, account := range userModel.Accounts {
-		if account.ProviderID == providerID && account.ProviderUserID == providerUser.ProviderId {
-			accountID = &k
-		}
-	}
-
-	accountRecord := models.ProviderUser{
-		Tokens:         providerUser.Tokens,
-		ProviderID:     providerID,
-		ProviderUserID: providerUser.ProviderId,
-		EmailAddress:   providerUser.EmailAddress,
-		Name:           providerUser.Name,
-		Username:       providerUser.Username,
-		UpdatedDate:    now,
-	}
-
-	if accountID == nil {
-		log.Debug().Msg("Adding new account record")
-		accountRecord.CreatedDate = now
-		userModel.Accounts = append(userModel.Accounts, &accountRecord)
-	} else {
-		log.Debug().Int("accountID", *accountID).Msg("Updating account record")
-
-		// Set the extant records
-		accountRecord.ID = userModel.Accounts[*accountID].ID
-		accountRecord.CreatedDate = userModel.Accounts[*accountID].CreatedDate
-
-		userModel.Accounts[*accountID] = &accountRecord
-	}
-	userModel.UpdatedDate = now
+	userModel.AddProvider(providerID, providerUser)
 
 	for _, a := range userModel.Accounts {
 		if err := a.EncryptTokens(s.cfg); err != nil {

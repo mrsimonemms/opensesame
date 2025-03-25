@@ -47,10 +47,10 @@ func (p *controller) GetUser(c *fiber.Ctx) error {
 	user := c.Locals(auth.UserContextKey).(*models.User)
 	log := c.Locals("logger").(zerolog.Logger)
 
-	for _, a := range user.Accounts {
+	for providerID, a := range user.Accounts {
 		if err := a.DecryptTokens(p.cfg); err != nil {
-			log.Error().Err(err).Str("providerID", a.ProviderID).Msg("Error decrypting provider token")
-			return fiber.NewError(fiber.StatusInternalServerError, fmt.Sprintf("Error decrypting provider token: %s", a.ProviderID))
+			log.Error().Err(err).Str("providerID", providerID).Msg("Error decrypting provider token")
+			return fiber.NewError(fiber.StatusInternalServerError, fmt.Sprintf("Error decrypting provider token: %s", providerID))
 		}
 	}
 
