@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/mrsimonemms/cloud-native-auth/apps/server/internal/services"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/auth"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/config"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/database"
@@ -28,19 +29,40 @@ import (
 )
 
 type controller struct {
-	cfg *config.ServerConfig
-	db  database.Driver
+	cfg         *config.ServerConfig
+	db          database.Driver
+	userService *services.Users
 }
 
 func Router(route fiber.Router, cfg *config.ServerConfig, db database.Driver) {
 	p := controller{
-		cfg: cfg,
-		db:  db,
+		cfg:         cfg,
+		db:          db,
+		userService: services.NewUsersService(cfg, db),
 	}
 
 	route.Route("/user", func(router fiber.Router) {
-		router.Get("/", auth.VerifyUser(cfg, db), p.GetUser)
+		router.
+			Use(auth.VerifyUser(cfg, db)).
+			Get("/", p.GetUser).
+			Delete("/provider/:providerID", p.DeleteProvider)
 	})
+}
+
+func (p *controller) DeleteProvider(c *fiber.Ctx) error {
+	providerID := c.Params("providerID")
+	user := c.Locals(auth.UserContextKey).(*models.User)
+	log := c.Locals("logger").(zerolog.Logger)
+
+	log = log.With().Str("providerID", providerID).Logger()
+
+	_, err := p.userService.RemoveProviderFromUser(c.Context(), user.ID, providerID)
+	if err != nil {
+		log.Warn().Err(err).Msg("Error updating user")
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+
+	return c.SendStatus(fiber.StatusNoContent)
 }
 
 func (p *controller) GetUser(c *fiber.Ctx) error {

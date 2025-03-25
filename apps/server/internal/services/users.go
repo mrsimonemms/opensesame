@@ -105,6 +105,31 @@ func (s *Users) GetUserByID(ctx context.Context, userID string) (*models.User, e
 	return s.db.GetUserByID(ctx, userID)
 }
 
+func (s *Users) RemoveProviderFromUser(ctx context.Context, userID, providerID string) (*models.User, error) {
+	user, err := s.db.GetUserByID(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("error getting user by id: %w", err)
+	}
+	if user == nil {
+		return nil, fmt.Errorf("unknown user")
+	}
+	if _, ok := user.Accounts[providerID]; !ok {
+		return nil, fmt.Errorf("provider not registered: %s", providerID)
+	}
+	if len(user.Accounts) <= 1 {
+		return nil, fmt.Errorf("cannot remove last provider account from user")
+	}
+
+	delete(user.Accounts, providerID)
+
+	user, err = s.db.SaveUserRecord(ctx, user)
+	if err != nil {
+		return nil, fmt.Errorf("error saving user record: %w", err)
+	}
+
+	return user, nil
+}
+
 func NewUsersService(cfg *config.ServerConfig, db database.Driver) *Users {
 	return &Users{
 		cfg: cfg,
