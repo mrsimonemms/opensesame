@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package services
+package stores
 
 import (
 	"context"
 	"fmt"
 
+	"github.com/mrsimonemms/cloud-native-auth/apps/server/internal/database"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/config"
-	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/database"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/models"
 	"github.com/mrsimonemms/cloud-native-auth/packages/authentication/v1"
 	"github.com/rs/zerolog/log"
@@ -126,7 +126,7 @@ func (s *Users) RemoveProviderFromUser(ctx context.Context, userID, providerID s
 	return user, nil
 }
 
-func NewUsersService(cfg *config.ServerConfig, db database.Driver) *Users {
+func NewUsersStore(cfg *config.ServerConfig, db database.Driver) *Users {
 	return &Users{
 		cfg: cfg,
 		db:  db,

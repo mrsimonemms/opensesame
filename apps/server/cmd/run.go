@@ -18,10 +18,12 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/mrsimonemms/cloud-native-auth/apps/server/internal/database"
+	"github.com/mrsimonemms/cloud-native-auth/apps/server/internal/handler"
+	"github.com/mrsimonemms/cloud-native-auth/apps/server/internal/server"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/config"
-	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/database"
-	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/server"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 )
@@ -72,7 +74,15 @@ var runCmd = &cobra.Command{
 
 		defer db.Close(ctx)
 
-		if err := server.New(cfg, db).Start(); err != nil {
+		app := server.App()
+		h := handler.New(cfg, db)
+		h.Register(app)
+
+		addr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
+
+		log.Info().Str("address", addr).Msg("Starting server")
+
+		if err := app.Listen(addr); err != nil {
 			log.Fatal().Err(err).Msg("Unable to start server")
 		}
 	},

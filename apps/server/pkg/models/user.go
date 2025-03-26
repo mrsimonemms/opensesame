@@ -20,44 +20,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/config"
 	"github.com/mrsimonemms/cloud-native-auth/packages/authentication/v1"
 )
-
-type ProviderAccount struct {
-	ID             string            `json:"-"`      // Represents the database ID
-	Tokens         map[string]string `json:"tokens"` // This is highly sensitive so will only be exported encrypted
-	ProviderUserID string            `json:"providerUserId"`
-	EmailAddress   *string           `json:"emailAddress"`
-	Name           *string           `json:"name"`
-	Username       *string           `json:"username"`
-}
-
-func (p *ProviderAccount) DecryptTokens(cfg *config.ServerConfig) error {
-	for k, v := range p.Tokens {
-		encrypted, err := decrypt(v, cfg.Encryption.Key)
-		if err != nil {
-			return fmt.Errorf("error decrypting provider token: %w", err)
-		}
-
-		p.Tokens[k] = string(encrypted)
-	}
-
-	return nil
-}
-
-func (p *ProviderAccount) EncryptTokens(cfg *config.ServerConfig) error {
-	for k, v := range p.Tokens {
-		encrypted, err := encrypt(v, cfg.Encryption.Key)
-		if err != nil {
-			return fmt.Errorf("error encrypting provider token: %w", err)
-		}
-
-		p.Tokens[k] = string(encrypted)
-	}
-
-	return nil
-}
 
 type User struct {
 	ID           string                      `json:"id"` // Represents the database ID
@@ -101,6 +67,26 @@ func (u *User) EncryptTokens(cfg *config.ServerConfig) error {
 		}
 	}
 	return nil
+}
+
+func (u *User) GenerateAuthToken(cfg *config.ServerConfig) (string, error) {
+	t := jwt.NewWithClaims(
+		jwt.SigningMethodHS256,
+		jwt.MapClaims{
+			"exp": time.Now().Add(cfg.ExpiresIn.Duration).Unix(),
+			"iat": time.Now().Unix(),
+			"iss": cfg.JWT.Issuer,
+			"nbf": time.Now().Unix(),
+			"sub": u.ID,
+		},
+	)
+
+	s, err := t.SignedString(cfg.JWT.Key)
+	if err != nil {
+		return "", fmt.Errorf("error generating jwt signed string: %w", err)
+	}
+
+	return s, nil
 }
 
 func NewUser() *User {

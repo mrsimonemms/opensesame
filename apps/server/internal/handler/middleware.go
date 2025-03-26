@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package auth
+package handler
 
 import (
 	"time"
@@ -22,32 +22,51 @@ import (
 	jwtware "github.com/gofiber/contrib/jwt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/mrsimonemms/cloud-native-auth/apps/server/internal/services"
-	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/config"
-	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/database"
+	"github.com/mrsimonemms/cloud-native-auth/apps/server/internal/providers"
+	"github.com/mrsimonemms/cloud-native-auth/packages/authentication/v1"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
-const (
-	jwtContextKey       = "jwtoken"
-	userAuthQueryString = "token"
-	UserContextKey      = "user"
-)
-
-// Verify the user's permission to access the resource - errors with 403
-func VerifyRBACPermissions(cfg *config.ServerConfig, db database.Driver) func(*fiber.Ctx) error {
+func (h *handler) IsRouteEnabled(route authentication.Route) func(c *fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		return c.Next()
+		providerID := c.Params("providerID")
+		provider := providers.FindProvider(h.config.Providers, providerID)
+
+		log := c.Locals("logger").(zerolog.Logger)
+
+		l := log.With().Str("providerID", provider.ID).Str("route", route.String()).Logger()
+
+		l.Debug().Msg("Validating route can be called")
+
+		res, err := provider.Client.RouteEnabled(c.Context(), &authentication.RouteEnabledRequest{
+			Route: route,
+		})
+
+		if err != nil || res.Enabled {
+			if err != nil {
+				l = l.With().Err(err).Logger()
+			}
+			l.Debug().Msg("Route enabled - continuing")
+			return c.Next()
+		}
+
+		l.Debug().Msg("Route disabled")
+
+		return fiber.ErrNotFound
 	}
 }
 
+// Verify the user's permission to access the resource - errors with 403
+func (h *handler) VerifyRBACPermissions(c *fiber.Ctx) error {
+	return c.Next()
+}
+
 // Verifies the user's identity - errors with 401
-func VerifyUser(cfg *config.ServerConfig, db database.Driver, isOptional ...bool) func(*fiber.Ctx) error {
+func (h *handler) VerifyUser(isOptional ...bool) func(*fiber.Ctx) error {
 	if len(isOptional) == 0 {
 		isOptional = []bool{false}
 	}
-
-	usersService := services.NewUsersService(cfg, db)
 
 	return func(c *fiber.Ctx) error {
 		var tokenLookup string
@@ -59,31 +78,23 @@ func VerifyUser(cfg *config.ServerConfig, db database.Driver, isOptional ...bool
 
 		return jwtware.New(jwtware.Config{
 			ContextKey:     jwtContextKey,
-			ErrorHandler:   authErrorHandler(isOptional[0]),
-			SuccessHandler: authSuccessHandler(cfg, usersService, isOptional[0]),
-			SigningKey:     jwtware.SigningKey{Key: cfg.JWT.Key},
+			ErrorHandler:   h.authErrorHandler(isOptional[0]),
+			SuccessHandler: h.authSuccessHandler(isOptional[0]),
+			SigningKey:     jwtware.SigningKey{Key: h.config.JWT.Key},
 			TokenLookup:    tokenLookup,
 		})(c)
 	}
 }
 
-func optionalErrorHandler(c *fiber.Ctx, isOptional bool) error {
-	if isOptional {
-		return c.Next()
-	}
-
-	return fiber.ErrUnauthorized
-}
-
-func authErrorHandler(isOptional bool) func(c *fiber.Ctx, err error) error {
+func (h *handler) authErrorHandler(isOptional bool) func(c *fiber.Ctx, err error) error {
 	return func(c *fiber.Ctx, err error) error {
 		log.Debug().Err(err).Msg("Error validating user")
 
-		return optionalErrorHandler(c, isOptional)
+		return h.optionalErrorHandler(c, isOptional)
 	}
 }
 
-func authSuccessHandler(cfg *config.ServerConfig, usersService *services.Users, isOptional bool) func(c *fiber.Ctx) error {
+func (h *handler) authSuccessHandler(isOptional bool) func(c *fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		token := c.Locals(jwtContextKey).(*jwt.Token)
 
@@ -92,52 +103,60 @@ func authSuccessHandler(cfg *config.ServerConfig, usersService *services.Users, 
 		expiry, err := token.Claims.GetExpirationTime()
 		if err != nil {
 			log.Debug().Err(err).Msg("Error retrieving expiry from JWT")
-			return optionalErrorHandler(c, isOptional)
+			return h.optionalErrorHandler(c, isOptional)
 		}
 		if expiry == nil || expiry.Before(now) {
 			log.Debug().Msg("Token expiry invalid or expired")
-			return optionalErrorHandler(c, isOptional)
+			return h.optionalErrorHandler(c, isOptional)
 		}
 
 		notBefore, err := token.Claims.GetNotBefore()
 		if err != nil {
 			log.Debug().Err(err).Msg("Error retrieving not before from JWT")
-			return optionalErrorHandler(c, isOptional)
+			return h.optionalErrorHandler(c, isOptional)
 		}
 		if notBefore == nil || notBefore.After(now) {
 			log.Debug().Msg("Token not before invalid or expired")
-			return optionalErrorHandler(c, isOptional)
+			return h.optionalErrorHandler(c, isOptional)
 		}
 
 		issuer, err := token.Claims.GetIssuer()
 		if err != nil {
 			log.Debug().Err(err).Msg("Error retrieving issuer from JWT")
-			return optionalErrorHandler(c, isOptional)
+			return h.optionalErrorHandler(c, isOptional)
 		}
-		if issuer != cfg.JWT.Issuer {
+		if issuer != h.config.JWT.Issuer {
 			log.Debug().Msg("Token issuer invalid")
-			return optionalErrorHandler(c, isOptional)
+			return h.optionalErrorHandler(c, isOptional)
 		}
 
 		userID, err := token.Claims.GetSubject()
 		if err != nil {
 			log.Debug().Err(err).Msg("Error retrieving user ID from JWT")
-			return optionalErrorHandler(c, isOptional)
+			return h.optionalErrorHandler(c, isOptional)
 		}
 
-		user, err := usersService.GetUserByID(c.Context(), userID)
+		user, err := h.usersStore.GetUserByID(c.Context(), userID)
 		if err != nil {
 			log.Error().Err(err).Msg("Error retrieving user by ID")
-			return optionalErrorHandler(c, isOptional)
+			return h.optionalErrorHandler(c, isOptional)
 		}
 		if user == nil {
 			log.Debug().Msg("No user found")
-			return optionalErrorHandler(c, isOptional)
+			return h.optionalErrorHandler(c, isOptional)
 		}
 
 		log.Debug().Msg("User found and saved to context")
-		c.Locals(UserContextKey, user)
+		c.Locals(userContextKey, user)
 
 		return c.Next()
 	}
+}
+
+func (h *handler) optionalErrorHandler(c *fiber.Ctx, isOptional bool) error {
+	if isOptional {
+		return c.Next()
+	}
+
+	return fiber.ErrUnauthorized
 }

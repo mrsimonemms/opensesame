@@ -27,6 +27,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// Convert the Fiber context to a Connect-like request object
 func generateAuthRequest(c *fiber.Ctx) *authentication.AuthRequest {
 	headers := map[string]*authentication.KeyRepeatedValue{}
 	for key, value := range c.GetReqHeaders() {
@@ -44,6 +45,7 @@ func generateAuthRequest(c *fiber.Ctx) *authentication.AuthRequest {
 	}
 }
 
+// Handle authentication from the remove provider
 func Authenticate(c *fiber.Ctx, provider config.Provider) (*authentication.User, error) {
 	l := log.With().Str("providerID", provider.ID).Logger()
 
