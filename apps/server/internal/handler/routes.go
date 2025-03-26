@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+//go:generate swag init --output ../../docs -g routes.go --parseDependency --parseInternal
+
 package handler
 
 import (
@@ -23,11 +25,31 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/healthcheck"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
+	"github.com/gofiber/swagger"
 	"github.com/mrsimonemms/cloud-native-auth/packages/authentication/v1"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog/log"
+
+	_ "github.com/mrsimonemms/cloud-native-auth/apps/server/docs"
 )
 
+// @title Cloud Native Auth
+// @version 1.0
+// @description Authentication and authorization for cloud-native apps
+// @license.name Apache 2.0
+// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
+// @host localhost:9000
+// @BasePath /
+//
+// @securityDefinitions.apikey Bearer
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
+//
+// @securityDefinitions.apikey Token
+// @in query
+// @name token
+// @description Type JWT token.
 func (h *handler) Register(app *fiber.App) {
 	app.
 		Use(requestid.New()).
@@ -48,6 +70,8 @@ func (h *handler) Register(app *fiber.App) {
 		Use(encryptcookie.New(encryptcookie.Config{
 			Key: h.config.Server.Cookie.Key,
 		}))
+
+	app.Get("api/*", swagger.HandlerDefault)
 
 	// Health and observability checks
 	app.Use(healthcheck.New(healthcheck.Config{

@@ -22,7 +22,7 @@ services:
       - provider-github
       - provider-gitlab
     restart: on-failure
-    command: air -build.args_bin run
+    command: air -build.args_bin run -build.pre_cmd="go generate ./..." -build.exclude_dir docs
 
   #############
   # Providers #

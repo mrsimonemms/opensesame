@@ -29,5 +29,8 @@
   },
   "onCreateCommand": {
     "linkBufBinary": "sudo rm /usr/local/bin/buf && sudo ln -s /usr/local/lib/buf/buf/bin/buf /usr/local/bin/buf"
+  },
+  "postStartCommand": {
+    "installSwaggo": "go install github.com/swaggo/swag/cmd/swag@latest"
   }
 }
