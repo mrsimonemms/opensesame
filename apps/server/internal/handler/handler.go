@@ -14,9 +14,25 @@
  * limitations under the License.
  */
 
-package providers
+package handler
 
-type ProviderDTO struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+import (
+	"github.com/mrsimonemms/cloud-native-auth/apps/server/internal/database"
+	"github.com/mrsimonemms/cloud-native-auth/apps/server/internal/stores"
+	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/config"
+)
+
+type handler struct {
+	config *config.ServerConfig
+	db     database.Driver
+
+	usersStore *stores.Users
+}
+
+func New(config *config.ServerConfig, db database.Driver) *handler {
+	return &handler{
+		config:     config,
+		db:         db,
+		usersStore: stores.NewUsersStore(config, db),
+	}
 }

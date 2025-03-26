@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package providers
+package handler
 
 import (
 	"fmt"
@@ -23,55 +23,20 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/mrsimonemms/cloud-native-auth/apps/server/internal/services"
-	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/auth"
-	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/config"
-	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/database"
+	"github.com/mrsimonemms/cloud-native-auth/apps/server/internal/providers"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/models"
-	"github.com/mrsimonemms/cloud-native-auth/packages/authentication/v1"
 	"github.com/rs/zerolog"
 )
 
-type controller struct {
-	cfg         *config.ServerConfig
-	db          database.Driver
-	userService *services.Users
+type ProviderDTO struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }
 
-const (
-	callbackCookieKey     = "callback"
-	existingUserCookieKey = "userID"
-)
-
-func Router(route fiber.Router, cfg *config.ServerConfig, db database.Driver) {
-	p := controller{
-		cfg:         cfg,
-		db:          db,
-		userService: services.NewUsersService(cfg, db),
-	}
-
-	route.Route("/providers", func(router fiber.Router) {
-		router.Get("/", p.ListProviders)
-		router.Get(
-			"/:providerID/login",
-			p.IsRouteEnabled(authentication.Route_ROUTE_LOGIN_GET),
-			auth.VerifyUser(p.cfg, p.db, true),
-			p.LoginToProvider,
-		)
-		router.Post(
-			"/:providerID/login",
-			p.IsRouteEnabled(authentication.Route_ROUTE_LOGIN_POST),
-			auth.VerifyUser(p.cfg, p.db, true),
-			p.LoginToProvider,
-		)
-		router.Get("/:providerID/login/callback", p.IsRouteEnabled(authentication.Route_ROUTE_CALLBACK_GET), p.LoginToProvider)
-	})
-}
-
-func (p *controller) ListProviders(c *fiber.Ctx) error {
+func (h *handler) ProvidersList(c *fiber.Ctx) error {
 	providers := []ProviderDTO{}
 
-	for _, i := range p.cfg.Providers {
+	for _, i := range h.config.Providers {
 		providers = append(providers, ProviderDTO{
 			ID:   i.ID,
 			Name: i.Name,
@@ -86,13 +51,13 @@ func (p *controller) ListProviders(c *fiber.Ctx) error {
 	return c.JSON(providers)
 }
 
-func (p *controller) LoginToProvider(c *fiber.Ctx) error {
-	handleInputCookies(c)
+func (h *handler) ProvidersLogin(c *fiber.Ctx) error {
+	handleLoginInputCookies(c)
 
 	log := c.Locals("logger").(zerolog.Logger)
 
 	providerID := c.Params("providerID")
-	provider := FindProvider(p.cfg.Providers, providerID)
+	provider := providers.FindProvider(h.config.Providers, providerID)
 	if provider == nil {
 		log.Debug().Str("providerID", providerID).Msg("Unknown provider ID")
 		return fiber.NewError(fiber.StatusNotFound, fmt.Sprintf("Unknown provider ID: %s", providerID))
@@ -101,7 +66,7 @@ func (p *controller) LoginToProvider(c *fiber.Ctx) error {
 	l := log.With().Str("providerID", providerID).Logger()
 
 	l.Debug().Msg("Authenticating against provider")
-	providerUser, err := Authenticate(c, *provider)
+	providerUser, err := providers.Authenticate(c, *provider)
 	if err != nil {
 		l.Error().Err(err).Msg("Error authenticating provider")
 		return err
@@ -119,14 +84,14 @@ func (p *controller) LoginToProvider(c *fiber.Ctx) error {
 	}
 
 	l.Debug().Msg("Triggering user upsert")
-	userModel, err := p.userService.CreateOrUpdateUserFromProvider(c.Context(), providerID, providerUser, existingUserID)
+	userModel, err := h.usersStore.CreateOrUpdateUserFromProvider(c.Context(), providerID, providerUser, existingUserID)
 	if err != nil {
 		l.Error().Err(err).Msg("Error creating user from provider")
 		return fiber.NewError(fiber.StatusServiceUnavailable, "Error creating user from provider")
 	}
 
 	l.Debug().Msg("Generate the auth token")
-	token, err := auth.GenerateToken(userModel, p.cfg)
+	token, err := userModel.GenerateAuthToken(h.config)
 	if err != nil {
 		l.Error().Err(err).Msg("Error generating auth token")
 		return fiber.NewError(fiber.StatusInternalServerError, "Error generating auth token")
@@ -148,7 +113,7 @@ func (p *controller) LoginToProvider(c *fiber.Ctx) error {
 		return c.Redirect(u.String())
 	}
 
-	if err := userModel.DecryptTokens(p.cfg); err != nil {
+	if err := userModel.DecryptTokens(h.config); err != nil {
 		l.Error().Err(err).Msg("Error decrypting account tokens")
 		return fiber.NewError(fiber.StatusInternalServerError)
 	}
@@ -160,41 +125,11 @@ func (p *controller) LoginToProvider(c *fiber.Ctx) error {
 	})
 }
 
-func (p *controller) IsRouteEnabled(route authentication.Route) func(c *fiber.Ctx) error {
-	return func(c *fiber.Ctx) error {
-		providerID := c.Params("providerID")
-		provider := FindProvider(p.cfg.Providers, providerID)
-
-		log := c.Locals("logger").(zerolog.Logger)
-
-		l := log.With().Str("providerID", provider.ID).Str("route", route.String()).Logger()
-
-		l.Debug().Msg("Validating route can be called")
-
-		res, err := provider.Client.RouteEnabled(c.Context(), &authentication.RouteEnabledRequest{
-			Route: route,
-		})
-
-		if err != nil || res.Enabled {
-			if err != nil {
-				l = l.With().Err(err).Logger()
-			}
-			l.Debug().Msg("Route enabled - continuing")
-			return c.Next()
-		}
-
-		l.Debug().Msg("Route disabled")
-
-		return fiber.ErrNotFound
-	}
-}
-
-func handleInputCookies(c *fiber.Ctx) {
+func handleLoginInputCookies(c *fiber.Ctx) {
 	log := c.Locals("logger").(zerolog.Logger)
 
 	// Check if there is an existing user loaded
-	if u := c.Locals(auth.UserContextKey); u != nil {
-		// existingUserModel =
+	if u := c.Locals(userContextKey); u != nil {
 		existingUserID := (u.(*models.User)).ID
 		log.Debug().Str("userID", existingUserID).Msg("Setting user ID to cookie")
 

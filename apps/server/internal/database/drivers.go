@@ -20,8 +20,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mrsimonemms/cloud-native-auth/apps/server/internal/database/mongodb"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/config"
-	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/database/mongodb"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/models"
 )
 
