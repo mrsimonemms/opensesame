@@ -27,7 +27,7 @@ import (
 
 var rotateKeysOpts struct {
 	ConfigFile string
-	NewKey     string
+	OldKey     string
 }
 
 // rotateKeysCmd represents the rotateKeys command
@@ -37,26 +37,26 @@ var rotateKeysCmd = &cobra.Command{
 	Short:   "Rotate encryption keys and update user account tokens",
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := context.Background()
-		cfg := loadConfig(rotateKeysOpts.ConfigFile)
+		newCfg := loadConfig(rotateKeysOpts.ConfigFile)
 
-		// Clone the config
-		newCfg := *cfg
-		newCfg.Encryption.Key = rotateKeysOpts.NewKey
+		// Clone the config and create with the old encryption key
+		oldCfg := *newCfg
+		oldCfg.Encryption.Key = rotateKeysOpts.OldKey
 		if err := newCfg.Validate(); err != nil {
-			log.Fatal().Err(err).Msg("New config is invalid")
+			log.Fatal().Err(err).Msg("Old config is invalid")
 		}
 
-		db := connectToDatabase(ctx, cfg)
+		db := connectToDatabase(ctx, newCfg)
 		defer db.Close(ctx)
 
 		updateCount, err := db.UpdateAllUsers(ctx, func(existing []*models.User) ([]*models.User, error) {
 			for _, record := range existing {
 				for _, a := range record.Accounts {
-					if err := a.DecryptTokens(cfg); err != nil {
+					if err := a.DecryptTokens(newCfg); err != nil {
 						return nil, fmt.Errorf("error decrypting account tokens: %w", err)
 					}
 
-					if err := a.EncryptTokens(&newCfg); err != nil {
+					if err := a.EncryptTokens(&oldCfg); err != nil {
 						return nil, fmt.Errorf("error encrypting account tokens: %w", err)
 					}
 				}
@@ -80,7 +80,7 @@ func init() {
 		"config",
 		"c",
 		bindEnv[string]("config", "config.yaml"),
-		"Location to the config file",
+		"Location to the config file with new encryption key",
 	)
-	rotateKeysCmd.Flags().StringVarP(&rotateKeysOpts.NewKey, "new-key", "k", bindEnv[string]("new-key", ""), "New encryption key")
+	rotateKeysCmd.Flags().StringVarP(&rotateKeysOpts.OldKey, "old-key", "k", bindEnv[string]("old-key", ""), "Old encryption key")
 }
