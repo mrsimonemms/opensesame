@@ -1,0 +1,19 @@
+{
+  "meta": {
+    "createdKey": "createdDate",
+    "updatedKey": "updatedDate"
+  },
+  "data": [
+    {
+      "_id": "67e58132a5d5257f95a32518",
+      "name": "Org Name",
+      "slug": "orgname",
+      "users": [
+        {
+          "userId": "507f1f77bcf86cd799439011",
+          "role": "ORG_MAINTAINER"
+        }
+      ]
+    }
+  ]
+}
