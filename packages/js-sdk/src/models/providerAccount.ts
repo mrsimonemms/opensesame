@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-export * from './express';
-export * from './interfaces/authentication/v1/authentication';
-export * from './models/providerAccount';
-export * from './models/user';
-export * from './passport/bootstrap';
-export * from './sdk';
+export class ProviderAccountModel {
+  // This is highly sensitive so will only be exported encrypted
+  tokens: Map<string, string>;
+  providerUserId: string;
+  emailAddress?: string;
+  name?: string;
+  username?: string;
+}

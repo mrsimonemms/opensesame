@@ -13,10 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { ProviderAccountModel } from './providerAccount';
 
-export * from './express';
-export * from './interfaces/authentication/v1/authentication';
-export * from './models/providerAccount';
-export * from './models/user';
-export * from './passport/bootstrap';
-export * from './sdk';
+export class UserModel {
+  id: string; // Represents the database ID
+  emailAddress: string;
+  name: string;
+  accounts: Map<string, ProviderAccountModel>; // Key is the provider ID, eg github
+  isActive: boolean;
+  createdDate: Date;
+  updatedDate: Date;
+}
