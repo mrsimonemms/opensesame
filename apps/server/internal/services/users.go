@@ -75,22 +75,18 @@ func (s *Users) CreateOrUpdateUserFromProvider(
 		// Use the existing user from now on
 		userModel = targetUser
 
-		// Decode the tokens
-		for _, a := range userModel.Accounts {
-			if err := a.DecryptTokens(s.cfg); err != nil {
-				log.Error().Err(err).Msg("Error decrypting account tokens")
-				return nil, fmt.Errorf("error decrypting account tokens: %w", err)
-			}
+		// Decrypt the existing tokens to avoid double encryption
+		if err := userModel.DecryptTokens(s.cfg); err != nil {
+			log.Error().Err(err).Msg("Error decrypting account tokens")
+			return nil, fmt.Errorf("error decrypting account tokens: %w", err)
 		}
 	}
 
 	userModel.AddProvider(providerID, providerUser)
 
-	for _, a := range userModel.Accounts {
-		if err := a.EncryptTokens(s.cfg); err != nil {
-			log.Error().Err(err).Msg("Error encrypting account tokens")
-			return nil, fmt.Errorf("error encrypting account tokens: %w", err)
-		}
+	if err := userModel.EncryptTokens(s.cfg); err != nil {
+		log.Error().Err(err).Msg("Error encrypting account tokens")
+		return nil, fmt.Errorf("error encrypting account tokens: %w", err)
 	}
 
 	data, err := s.db.SaveUserRecord(ctx, userModel)

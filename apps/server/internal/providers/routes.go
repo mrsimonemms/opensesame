@@ -148,11 +148,9 @@ func (p *controller) LoginToProvider(c *fiber.Ctx) error {
 		return c.Redirect(u.String())
 	}
 
-	for _, a := range userModel.Accounts {
-		if err := a.DecryptTokens(p.cfg); err != nil {
-			l.Error().Err(err).Msg("Error decrypting account tokens")
-			return fiber.NewError(fiber.StatusInternalServerError)
-		}
+	if err := userModel.DecryptTokens(p.cfg); err != nil {
+		l.Error().Err(err).Msg("Error decrypting account tokens")
+		return fiber.NewError(fiber.StatusInternalServerError)
 	}
 
 	l.Info().Msg("Outputting the user object")
