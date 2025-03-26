@@ -23,12 +23,12 @@ import (
 )
 
 type ProviderAccount struct {
-	ID             string            `json:"-"`      // Represents the database ID
-	Tokens         map[string]string `json:"tokens"` // This is highly sensitive so will only be exported encrypted
-	ProviderUserID string            `json:"providerUserId"`
-	EmailAddress   *string           `json:"emailAddress"`
-	Name           *string           `json:"name"`
-	Username       *string           `json:"username"`
+	ID             string            `json:"-"` // Represents the database ID
+	Tokens         map[string]string `json:"tokens" example:"accessToken:this-is-an-access-token,refreshToken:this-is-the-refresh-token"`
+	ProviderUserID string            `json:"providerUserId" example:"11223344"`
+	EmailAddress   *string           `json:"emailAddress" example:"test@test.com"`
+	Name           *string           `json:"name" example:"Test Testington"`
+	Username       *string           `json:"username" example:"testtestington"`
 }
 
 func (p *ProviderAccount) DecryptTokens(cfg *config.ServerConfig) error {

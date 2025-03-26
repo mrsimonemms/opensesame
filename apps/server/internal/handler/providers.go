@@ -33,6 +33,12 @@ type ProviderDTO struct {
 	Name string `json:"name"`
 }
 
+type ProviderLoginResponse struct {
+	//nolint:lll // Allow long example
+	Token string       `json:"token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjQ4OTg1NzMxNTksImlhdCI6MTc0MjkwMzEyNiwiaXNzIjoiY2xvdWQtbmF0aXZlLWF1dGgiLCJuYmYiOjE3NDI5MDMxMjYsInN1YiI6IjUwN2YxZjc3YmNmODZjZDc5OTQzOTAxMSJ9.MfozqyuUj7pM8OX9JfYHyRu06JpcrioqBqYh5b8GlYI"`
+	User  *models.User `json:"user"`
+}
+
 func (h *handler) ProvidersList(c *fiber.Ctx) error {
 	providers := []ProviderDTO{}
 
@@ -51,6 +57,19 @@ func (h *handler) ProvidersList(c *fiber.Ctx) error {
 	return c.JSON(providers)
 }
 
+// Login godoc
+// @Summary		Login
+// @Description Login to a provider
+// @Tags		Providers
+// @Accept		json
+// @Produce		json
+// @Success		200	{object}	ProviderLoginResponse
+// @Response	302	"Redirect to provider login page"
+// @Param		providerID	path	string	true	"Provider ID"	default(github)
+// @Router		/v1/providers/{providerID}/login [get]
+// @Router		/v1/providers/{providerID}/login [post]
+// @Router		/v1/providers/{providerID}/login/callback [get]
+// @Security	Token
 func (h *handler) ProvidersLogin(c *fiber.Ctx) error {
 	handleLoginInputCookies(c)
 
@@ -119,9 +138,9 @@ func (h *handler) ProvidersLogin(c *fiber.Ctx) error {
 	}
 
 	l.Info().Msg("Outputting the user object")
-	return c.JSON(fiber.Map{
-		"token": token,
-		"user":  userModel,
+	return c.JSON(ProviderLoginResponse{
+		Token: token,
+		User:  userModel,
 	})
 }
 

@@ -24,6 +24,8 @@ USER 1000
 WORKDIR /go/root
 COPY --chown=1000:1000 . .
 WORKDIR /go/root/apps/$APP
+RUN go install github.com/swaggo/swag/cmd/swag@latest \
+  && go generate ./...
 COPY --from=cosmtrek/air /go/bin/air /go/bin/air
 CMD [ "air" ]
 
@@ -37,7 +39,9 @@ COPY . .
 WORKDIR /go/root/apps/$APP
 ENV CGO_ENABLED=0
 ENV GOOS=linux
-RUN go build \
+RUN go install github.com/swaggo/swag/cmd/swag@latest \
+  && go generate ./... \
+  && go build \
   -ldflags \
   "-w -s -X $GIT_REPO/cmd.Version=$VERSION -X $GIT_REPO/cmd.GitCommit=$GIT_COMMIT" \
   -o /go/app

@@ -26,13 +26,13 @@ import (
 )
 
 type User struct {
-	ID           string                      `json:"id"` // Represents the database ID
-	EmailAddress string                      `json:"emailAddress"`
-	Name         string                      `json:"name"`
+	ID           string                      `json:"id" example:"507f1f77bcf86cd799439011"` // Represents the database ID
+	EmailAddress string                      `json:"emailAddress" example:"test@test.com"`
+	Name         string                      `json:"name" example:"Test Testington"`
 	Accounts     map[string]*ProviderAccount `json:"accounts"` // Key is the provider ID, eg github
-	IsActive     bool                        `json:"isActive"`
-	CreatedDate  time.Time                   `json:"createdDate"`
-	UpdatedDate  time.Time                   `json:"updatedDate"`
+	IsActive     bool                        `json:"isActive" example:"true"`
+	CreatedDate  time.Time                   `json:"createdDate" format:"date-time"`
+	UpdatedDate  time.Time                   `json:"updatedDate" format:"date-time"`
 }
 
 func (u *User) AddProvider(providerID string, providerUser *authentication.User) {

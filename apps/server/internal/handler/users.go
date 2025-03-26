@@ -24,6 +24,21 @@ import (
 	"github.com/rs/zerolog"
 )
 
+type UserGetResponse struct {
+	User *models.User `json:"user"`
+}
+
+// Get user godoc
+// @Summary		User
+// @Description Return the user data
+// @Tags		User
+// @Accept		json
+// @Produce		json
+// @Success		200	{object}	UserGetResponse
+// @Failure		401 "Unauthorised error"
+// @Router		/v1/user [get]
+// @Security	Bearer
+// @Security	Token
 func (h *handler) UserGet(c *fiber.Ctx) error {
 	user := c.Locals(userContextKey).(*models.User)
 	log := c.Locals("logger").(zerolog.Logger)
@@ -35,11 +50,22 @@ func (h *handler) UserGet(c *fiber.Ctx) error {
 		}
 	}
 
-	return c.JSON(fiber.Map{
-		"user": user,
-	})
+	return c.JSON(UserGetResponse{User: user})
 }
 
+// Delete provider godoc
+// @Summary		Delete provider
+// @Description Remove the provider authentication from the user
+// @Tags		User
+// @Accept		json
+// @Produce		json
+// @Param		providerID	path	string	true	"Provider ID"	default(github)
+// @Success		204	"No response"
+// @Failure		400 "Validation error"
+// @Failure		401 "Unauthorised error"
+// @Router		/v1/user/provider/{providerID} [delete]
+// @Security	Bearer
+// @Security	Token
 func (h *handler) UserProviderDelete(c *fiber.Ctx) error {
 	providerID := c.Params("providerID")
 	user := c.Locals(userContextKey).(*models.User)
