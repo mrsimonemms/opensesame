@@ -85,6 +85,24 @@ func (u *User) AddProvider(providerID string, providerUser *authentication.User)
 	u.UpdatedDate = time.Now()
 }
 
+func (u *User) DecryptTokens(cfg *config.ServerConfig) error {
+	for provider, accounts := range u.Accounts {
+		if err := accounts.DecryptTokens(cfg); err != nil {
+			return fmt.Errorf("error decrypting account tokens for %s: %w", provider, err)
+		}
+	}
+	return nil
+}
+
+func (u *User) EncryptTokens(cfg *config.ServerConfig) error {
+	for provider, accounts := range u.Accounts {
+		if err := accounts.EncryptTokens(cfg); err != nil {
+			return fmt.Errorf("error encrypting account tokens for %s: %w", provider, err)
+		}
+	}
+	return nil
+}
+
 func NewUser() *User {
 	return &User{
 		IsActive:    true, // Default to true
