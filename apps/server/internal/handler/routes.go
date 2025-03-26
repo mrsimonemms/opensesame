@@ -82,6 +82,20 @@ func (h *handler) Register(app *fiber.App) {
 	// Versioned endpoints
 	v1 := app.Group("/v1")
 
+	v1.Route("/orgs", func(router fiber.Router) {
+		router.
+			Use(h.VerifyUser()).
+			Get("/", h.OrganisationList).
+			Post("/", h.OrganisationCreate)
+
+		router.Route("/:orgID", func(r fiber.Router) {
+			r.
+				Get("/", h.OrganisationGet).
+				Delete("/", h.OrganisationDelete).
+				Patch("/", h.OrganisationUpdate)
+		})
+	})
+
 	v1.Route("/providers", func(router fiber.Router) {
 		router.Get("/", h.ProvidersList)
 		router.Get(
