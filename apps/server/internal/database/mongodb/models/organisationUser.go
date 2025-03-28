@@ -26,6 +26,7 @@ import (
 type OrganisationUser struct {
 	ID          bson.ObjectID `bson:"_id,omitempty"`
 	UserID      string        `bson:"userId"`
+	Name        string        `bson:"-"` // Not saved to MongoDB
 	Role        string        `bson:"role"`
 	CreatedDate time.Time     `bson:"createdDate"`
 	UpdatedDate time.Time     `bson:"updatedDate"`
@@ -34,6 +35,7 @@ type OrganisationUser struct {
 func (o *OrganisationUser) ToModel() *models.OrganisationUser {
 	m := &models.OrganisationUser{
 		UserID:      o.UserID,
+		Name:        o.Name,
 		Role:        o.Role,
 		CreatedDate: o.CreatedDate,
 		UpdatedDate: o.UpdatedDate,
