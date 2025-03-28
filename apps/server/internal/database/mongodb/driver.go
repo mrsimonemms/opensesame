@@ -18,6 +18,7 @@ package mongodb
 
 import (
 	"fmt"
+	"math"
 	"time"
 
 	mongoModels "github.com/mrsimonemms/cloud-native-auth/apps/server/internal/database/mongodb/models"
@@ -71,15 +72,8 @@ func (db *MongoDB) Connect(ctx context.Context) error {
 	}
 
 	// Apply the indices
-	userModel := mongo.IndexModel{
-		Keys: bson.D{
-			{Key: "accounts.providerId", Value: 1},
-			{Key: "accounts.providerUserId", Value: 1},
-		},
-	}
-
-	if _, err := db.activeConnection.db.Collection(UsersCollection).Indexes().CreateOne(context.TODO(), userModel); err != nil {
-		return fmt.Errorf("error creating index for user collection: %w", err)
+	if err := db.applyIndices(ctx); err != nil {
+		return fmt.Errorf("error applying indices: %w", err)
 	}
 
 	return nil
@@ -130,6 +124,58 @@ func (db *MongoDB) GetUserByID(ctx context.Context, userID string) (*models.User
 	}
 
 	return result.ToModel(), nil
+}
+
+func (db *MongoDB) ListOrganisations(
+	ctx context.Context,
+	offset,
+	limit int,
+	userID string,
+) (*models.Pagination[*models.Organisation], error) {
+	col := db.activeConnection.db.Collection(OrgsCollection)
+	filter := bson.D{
+		{Key: "users.userId", Value: userID},
+	}
+	opts := options.Find().SetLimit(int64(limit)).SetSkip(int64(offset)).SetSort(bson.D{
+		{Key: "name", Value: 1},
+	})
+
+	totalDocs, err := col.CountDocuments(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("error counting organisations: %w", err)
+	}
+
+	cursor, err := col.Find(context.TODO(), filter, opts)
+	if err != nil {
+		return nil, fmt.Errorf("error finding organisations: %w", err)
+	}
+
+	var mongodbOrgs []*mongoModels.Organisation
+	if err := cursor.All(ctx, &mongodbOrgs); err != nil {
+		return nil, fmt.Errorf("error getting all organisation records in cursor: %w", err)
+	}
+
+	orgs := make([]*models.Organisation, 0)
+	for _, o := range mongodbOrgs {
+		orgs = append(orgs, o.ToModel())
+	}
+
+	totalPages := int(math.Ceil(float64(totalDocs) / float64(limit)))
+	page := int(math.Ceil(float64(offset-1)/float64(limit)) + 1)
+	if page < 0 {
+		page = 0
+	} else if page > totalPages {
+		page = totalPages
+	}
+
+	return &models.Pagination[*models.Organisation]{
+		Data:       orgs,
+		Count:      len(orgs),
+		Page:       page,
+		PerPage:    limit,
+		TotalPages: totalPages,
+		Total:      totalDocs,
+	}, nil
 }
 
 func (db *MongoDB) SaveUserRecord(ctx context.Context, model *models.User) (*models.User, error) {
@@ -207,6 +253,42 @@ func (db *MongoDB) UpdateAllUsers(
 	}
 
 	return result.ModifiedCount, nil
+}
+
+func (db *MongoDB) applyIndices(ctx context.Context) error {
+	indices := map[string][]mongo.IndexModel{
+		OrgsCollection: {
+			{
+				Keys: bson.D{
+					{Key: "users.userID", Value: 1},
+				},
+			},
+			{
+				Keys: bson.D{
+					{Key: "slug", Value: 1},
+				},
+				Options: options.Index().SetUnique(true),
+			},
+		},
+		UsersCollection: {
+			{
+				Keys: bson.D{
+					{Key: "accounts.providerId", Value: 1},
+					{Key: "accounts.providerUserId", Value: 1},
+				},
+			},
+		},
+	}
+
+	for collection, indexModels := range indices {
+		for _, index := range indexModels {
+			if _, err := db.activeConnection.db.Collection(collection).Indexes().CreateOne(ctx, index); err != nil {
+				return fmt.Errorf("error creating index for %s collection: %w", collection, err)
+			}
+		}
+	}
+
+	return nil
 }
 
 func New(cfg config.MongoDB) *MongoDB {

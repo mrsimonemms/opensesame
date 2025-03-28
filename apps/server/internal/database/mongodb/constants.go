@@ -17,5 +17,6 @@
 package mongodb
 
 const (
+	OrgsCollection  = "organisations"
 	UsersCollection = "users"
 )

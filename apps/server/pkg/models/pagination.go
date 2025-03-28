@@ -19,9 +19,9 @@ package models
 type Pagination[T any] struct {
 	Data []T `json:"data"` // Subsection of data
 
-	Count      int32 `json:"count" example:"1"` // Number of records on this page
-	Page       int32 `json:"page" example:"2"`  // Current page number
-	PerPage    int32 `json:"perPage" example:"25"`
-	TotalPages int32 `json:"totalPages" example:"2"`
-	Total      int32 `json:"total" example:"26"`
+	Count      int   `json:"count" example:"1"` // Number of records on this page
+	Page       int   `json:"page" example:"2"`  // Current page number
+	PerPage    int   `json:"perPage" example:"25"`
+	TotalPages int   `json:"totalPages" example:"2"`
+	Total      int64 `json:"total" example:"26"`
 }

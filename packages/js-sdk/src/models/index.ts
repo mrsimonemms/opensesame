@@ -14,8 +14,5 @@
  * limitations under the License.
  */
 
-export * from './express';
-export * from './interfaces/authentication/v1/authentication';
-export * from './models';
-export * from './passport/bootstrap';
-export * from './sdk';
+export * from './providerAccount';
+export * from './user';

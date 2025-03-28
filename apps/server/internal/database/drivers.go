@@ -42,6 +42,9 @@ type Driver interface {
 	// Get the user by ID
 	GetUserByID(ctx context.Context, userID string) (user *models.User, err error)
 
+	// List organisations available to a user
+	ListOrganisations(ctx context.Context, offset, limit int, userID string) (orgs *models.Pagination[*models.Organisation], err error)
+
 	// Save the user record to the database
 	SaveUserRecord(ctx context.Context, model *models.User) (user *models.User, err error)
 
