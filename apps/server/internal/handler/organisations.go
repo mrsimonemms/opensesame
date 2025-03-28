@@ -17,7 +17,10 @@
 package handler
 
 import (
+	"errors"
+
 	"github.com/gofiber/fiber/v2"
+	"github.com/mrsimonemms/cloud-native-auth/apps/server/internal/common"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/models"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -98,11 +101,17 @@ func (h *handler) OrganisationList(c *fiber.Ctx) error {
 // @Security	Token
 func (h *handler) OrganisationDelete(c *fiber.Ctx) error {
 	orgID := c.Params("orgID")
+	user := c.Locals(userContextKey).(*models.User)
 
-	return c.JSON(fiber.Map{
-		"type":  "delete org",
-		"orgID": orgID,
-	})
+	if err := h.db.DeleteOrganisation(c.Context(), orgID, user.ID); err != nil {
+		log.Error().Err(err).Msg("Error deleting organisation")
+		if errors.Is(err, common.ErrNotDeleted) {
+			return fiber.ErrNotFound
+		}
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+
+	return c.SendStatus(fiber.StatusNoContent)
 }
 
 // Get organisation godoc

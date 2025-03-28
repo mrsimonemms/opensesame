@@ -36,6 +36,9 @@ type Driver interface {
 	// Authorize the connection to the database
 	Connect(ctx context.Context) error
 
+	// Delete organisation
+	DeleteOrganisation(ctx context.Context, orgID, userID string) error
+
 	// Find the user by the provider and provider user ID
 	FindUserByProviderAndUserID(ctx context.Context, providerID, providerUserID string) (user *models.User, err error)
 

@@ -21,6 +21,7 @@ import (
 	"math"
 	"time"
 
+	"github.com/mrsimonemms/cloud-native-auth/apps/server/internal/common"
 	mongoModels "github.com/mrsimonemms/cloud-native-auth/apps/server/internal/database/mongodb/models"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/config"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/models"
@@ -74,6 +75,29 @@ func (db *MongoDB) Connect(ctx context.Context) error {
 	// Apply the indices
 	if err := db.applyIndices(ctx); err != nil {
 		return fmt.Errorf("error applying indices: %w", err)
+	}
+
+	return nil
+}
+
+func (db *MongoDB) DeleteOrganisation(ctx context.Context, orgID, userID string) error {
+	id, err := bson.ObjectIDFromHex(orgID)
+	if err != nil {
+		return fmt.Errorf("error converting org id to bson object id: %w", err)
+	}
+
+	filter := bson.D{
+		{Key: "_id", Value: id},
+		{Key: "users.userId", Value: userID},
+	}
+
+	result, err := db.activeConnection.db.Collection(OrgsCollection).DeleteOne(ctx, filter)
+	if err != nil {
+		return fmt.Errorf("error deleting org: %w", err)
+	}
+
+	if result.DeletedCount == 0 {
+		return common.ErrNotDeleted
 	}
 
 	return nil
