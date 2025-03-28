@@ -92,7 +92,8 @@ func (h *handler) Register(app *fiber.App) {
 			r.
 				Get("/", h.OrganisationGet).
 				Delete("/", h.OrganisationDelete).
-				Patch("/", h.OrganisationUpdate)
+				Patch("/", h.OrganisationUpdate).
+				Get("/users", h.OrganisationListUsers)
 		})
 	})
 

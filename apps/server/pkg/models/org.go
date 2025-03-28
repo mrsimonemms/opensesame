@@ -19,12 +19,13 @@ package models
 import "time"
 
 type OrganisationUser struct {
-	ID          string    `json:"-"`
-	UserID      string    `json:"userId" example:"507f1f77bcf86cd799439011"`
-	Name        string    `json:"name,omitempty" example:"Test Testington"`
-	Role        string    `json:"role" example:"ORG_MAINTAINER"`
-	CreatedDate time.Time `json:"createdDate" format:"date-time"`
-	UpdatedDate time.Time `json:"updatedDate" format:"date-time"`
+	ID           string    `json:"-"`
+	UserID       string    `json:"userId" example:"507f1f77bcf86cd799439011"`
+	Name         string    `json:"name,omitempty" example:"Test Testington"`
+	EmailAddress string    `json:"emailAddress,omitempty" example:"test@testington.com"`
+	Role         string    `json:"role" example:"ORG_MAINTAINER"`
+	CreatedDate  time.Time `json:"createdDate" format:"date-time"`
+	UpdatedDate  time.Time `json:"updatedDate" format:"date-time"`
 }
 
 type Organisation struct {

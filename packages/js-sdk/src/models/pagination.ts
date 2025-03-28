@@ -14,6 +14,12 @@
  * limitations under the License.
  */
 
-export * from './pagination';
-export * from './providerAccount';
-export * from './user';
+export class Pagination<T> {
+  data: T[]; // Subsection of data
+
+  count: number; // Number of records on this page
+  page: number; // Current page number
+  perPage: number;
+  totalPages: number;
+  total: number;
+}
