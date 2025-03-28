@@ -16,23 +16,53 @@
 
 package models
 
-import "time"
+import (
+	"time"
+)
 
 type OrganisationUser struct {
 	ID           string    `json:"-"`
-	UserID       string    `json:"userId" example:"507f1f77bcf86cd799439011"`
+	UserID       string    `json:"userId" form:"userId" example:"507f1f77bcf86cd799439011" validate:"required"`
 	Name         string    `json:"name,omitempty" example:"Test Testington"`
 	EmailAddress string    `json:"emailAddress,omitempty" example:"test@testington.com"`
-	Role         string    `json:"role" example:"ORG_MAINTAINER"`
+	Role         string    `json:"role" form:"role" example:"ORG_MAINTAINER" validate:"required"`
 	CreatedDate  time.Time `json:"createdDate" format:"date-time"`
 	UpdatedDate  time.Time `json:"updatedDate" format:"date-time"`
 }
 
 type Organisation struct {
 	ID          string              `json:"id" example:"67e58132a5d5257f95a32518"` // Represents the database ID
-	Name        string              `json:"name" example:"Org Name"`
-	Slug        string              `json:"slug" example:"orgname"`
-	Users       []*OrganisationUser `json:"users"`
+	Name        string              `json:"name" form:"name" example:"Org Name" validate:"required"`
+	Slug        string              `json:"slug" form:"slug" example:"orgname" validate:"required"`
+	Users       []*OrganisationUser `json:"users" form:"users" validate:"required"`
 	CreatedDate time.Time           `json:"createdDate" format:"date-time"`
 	UpdatedDate time.Time           `json:"updatedDate" format:"date-time"`
+}
+
+type OrgDTO struct {
+	Name  string        `json:"name" form:"name" example:"Org Name" validate:"required"`
+	Slug  string        `json:"slug" form:"slug" example:"orgname" validate:"required"`
+	Users []*OrgUserDTO `json:"users" form:"users" validate:"required,min=1"`
+}
+
+func (o *OrgDTO) ToModel() *Organisation {
+	m := &Organisation{
+		Name:  o.Name,
+		Slug:  o.Slug,
+		Users: []*OrganisationUser{},
+	}
+
+	for _, u := range o.Users {
+		m.Users = append(m.Users, &OrganisationUser{
+			UserID: u.UserID,
+			Role:   u.Role,
+		})
+	}
+
+	return m
+}
+
+type OrgUserDTO struct {
+	UserID string `json:"userId" example:"507f1f77bcf86cd799439011"`
+	Role   string `json:"role" example:"ORG_MAINTAINER"`
 }

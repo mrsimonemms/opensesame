@@ -19,7 +19,9 @@ package server
 import (
 	"errors"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/utils"
 	"github.com/rs/zerolog/log"
 )
 
@@ -30,9 +32,31 @@ func App() *fiber.App {
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
 			code := fiber.StatusInternalServerError
 
+			var output any
 			var e *fiber.Error
+			var ve validator.ValidationErrors
 			if errors.As(err, &e) {
 				code = e.Code
+				output = e
+			} else if errors.As(err, &ve) {
+				code = fiber.StatusBadRequest
+
+				validation := []fiber.Map{}
+				for _, v := range ve {
+					validation = append(validation, fiber.Map{
+						"namespace": v.Namespace(),
+						"field":     v.Field(),
+						"value":     v.Value(),
+						"tag":       v.Tag(),
+						"param":     v.Param(),
+						"error":     v.Error(),
+					})
+				}
+				output = fiber.Map{
+					"code":       code,
+					"message":    utils.StatusMessage(code),
+					"validation": validation,
+				}
 			}
 
 			if code >= 500 && code < 600 {
@@ -44,7 +68,7 @@ func App() *fiber.App {
 			}
 
 			// Render the error as JSON
-			err = c.Status(code).JSON(e)
+			err = c.Status(code).JSON(output)
 			if err != nil {
 				log.Error().Err(err).Msg("Error rendering web output")
 				return c.Status(fiber.StatusInternalServerError).JSON(fiber.ErrInternalServerError)

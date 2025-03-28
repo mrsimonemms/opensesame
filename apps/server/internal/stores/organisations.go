@@ -14,31 +14,43 @@
  * limitations under the License.
  */
 
-package handler
+package stores
 
 import (
-	"github.com/go-playground/validator/v10"
+	"context"
+	"fmt"
+
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/internal/database"
-	"github.com/mrsimonemms/cloud-native-auth/apps/server/internal/stores"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/config"
 )
 
-type handler struct {
-	config    *config.ServerConfig
-	db        database.Driver
-	validator *validator.Validate
-
-	orgsStore  *stores.Organisations
-	usersStore *stores.Users
+type Organisations struct {
+	cfg *config.ServerConfig
+	db  database.Driver
 }
 
-func New(config *config.ServerConfig, db database.Driver) *handler {
-	return &handler{
-		config:    config,
-		db:        db,
-		validator: validator.New(validator.WithRequiredStructEnabled()),
+func (o *Organisations) CheckSlugIsUnique(ctx context.Context, slug string, expectedOrgID *string) (bool, error) {
+	org, err := o.db.GetOrgBySlug(ctx, slug)
+	if err != nil {
+		return false, fmt.Errorf("error getting org by slug: %w", err)
+	}
 
-		orgsStore:  stores.NewOrganisationsStore(config, db),
-		usersStore: stores.NewUsersStore(config, db),
+	if org == nil {
+		// No org found
+		return true, nil
+	}
+
+	if expectedOrgID != nil && org.ID == *expectedOrgID {
+		// If found org matched the given org ID
+		return true, nil
+	}
+
+	return false, nil
+}
+
+func NewOrganisationsStore(cfg *config.ServerConfig, db database.Driver) *Organisations {
+	return &Organisations{
+		cfg: cfg,
+		db:  db,
 	}
 }

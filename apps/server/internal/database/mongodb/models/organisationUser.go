@@ -45,3 +45,10 @@ func (o *OrganisationUser) ToModel() *models.OrganisationUser {
 
 	return m
 }
+
+func OrganisationUserToMongo(p *models.OrganisationUser) *OrganisationUser {
+	return &OrganisationUser{
+		UserID: p.Name,
+		Role:   p.Role,
+	}
+}
