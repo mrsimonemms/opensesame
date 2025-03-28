@@ -48,6 +48,15 @@ type Driver interface {
 	// List organisations available to a user
 	ListOrganisations(ctx context.Context, offset, limit int, userID string) (orgs *models.Pagination[*models.Organisation], err error)
 
+	// List users attached to an organisation
+	ListOrganisationUsers(
+		ctx context.Context,
+		offset,
+		limit int,
+		orgID,
+		userID string,
+	) (users *models.Pagination[*models.OrganisationUser], err error)
+
 	// Save the user record to the database
 	SaveUserRecord(ctx context.Context, model *models.User) (user *models.User, err error)
 

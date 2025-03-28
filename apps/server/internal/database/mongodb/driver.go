@@ -121,42 +121,7 @@ func (db *MongoDB) GetOrgByID(ctx context.Context, orgID, userID string) (*model
 		return nil, fmt.Errorf("error getting org by id: %w", err)
 	}
 
-	userIDs, err := result.GetUserIDs()
-	if err != nil {
-		return nil, err
-	}
-
-	users, err := db.findMultipleUsers(ctx, userIDs)
-	if err != nil {
-		return nil, err
-	}
-
-	result.PopulateUsers(users)
-
 	return result.ToModel(), nil
-}
-
-func (db *MongoDB) findMultipleUsers(ctx context.Context, userIDs []bson.M) (map[string]*mongoModels.User, error) {
-	filter := bson.M{
-		"$or": userIDs,
-	}
-
-	cursor, err := db.activeConnection.db.Collection(UsersCollection).Find(ctx, filter)
-	if err != nil {
-		return nil, fmt.Errorf("error getting multiple users: %w", err)
-	}
-
-	var users []*mongoModels.User
-	if err := cursor.All(ctx, &users); err != nil {
-		return nil, fmt.Errorf("error populating multiple users from cursor: %w", err)
-	}
-
-	result := map[string]*mongoModels.User{}
-	for _, u := range users {
-		result[u.ID.Hex()] = u
-	}
-
-	return result, nil
 }
 
 func (db *MongoDB) GetUserByID(ctx context.Context, userID string) (*models.User, error) {
@@ -234,6 +199,62 @@ func (db *MongoDB) ListOrganisations(
 		PerPage:    limit,
 		TotalPages: totalPages,
 		Total:      totalDocs,
+	}, nil
+}
+
+func (db *MongoDB) ListOrganisationUsers(
+	ctx context.Context,
+	offset,
+	limit int,
+	orgID,
+	userID string,
+) (*models.Pagination[*models.OrganisationUser], error) {
+	org, err := db.GetOrgByID(ctx, orgID, userID)
+	if err != nil {
+		return nil, fmt.Errorf("errot getting org by id: %w", err)
+	}
+	if org == nil {
+		return nil, nil
+	}
+
+	totalDocs := len(org.Users)
+	start := max(offset, 0)
+	end := min(offset+limit, totalDocs)
+
+	// Prune the org's users
+	org.Users = org.Users[start:end]
+
+	totalPages := int(math.Ceil(float64(totalDocs) / float64(limit)))
+	page := int(math.Ceil(float64(offset-1)/float64(limit)) + 1)
+	if page < 0 {
+		page = 0
+	} else if page > totalPages {
+		page = totalPages
+	}
+
+	userIDs, err := mongoModels.PaginateUniqueUsers(org)
+	if err != nil {
+		return nil, fmt.Errorf("error extracting unique users from org %s: %w", org.ID, err)
+	}
+
+	if len(userIDs) > 0 {
+		users, err := db.findMultipleUsers(ctx, userIDs)
+		if err != nil {
+			return nil, err
+		}
+
+		for key, value := range org.Users {
+			org.Users[key].Name = users[value.UserID].Name
+		}
+	}
+
+	return &models.Pagination[*models.OrganisationUser]{
+		Data:       org.Users,
+		Count:      len(org.Users),
+		Page:       page,
+		PerPage:    limit,
+		TotalPages: totalPages,
+		Total:      int64(totalDocs),
 	}, nil
 }
 
@@ -348,6 +369,29 @@ func (db *MongoDB) applyIndices(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (db *MongoDB) findMultipleUsers(ctx context.Context, userIDs []bson.M) (map[string]*mongoModels.User, error) {
+	filter := bson.M{
+		"$or": userIDs,
+	}
+
+	cursor, err := db.activeConnection.db.Collection(UsersCollection).Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("error getting multiple users: %w", err)
+	}
+
+	var users []*mongoModels.User
+	if err := cursor.All(ctx, &users); err != nil {
+		return nil, fmt.Errorf("error populating multiple users from cursor: %w", err)
+	}
+
+	result := map[string]*mongoModels.User{}
+	for _, u := range users {
+		result[u.ID.Hex()] = u
+	}
+
+	return result, nil
 }
 
 func New(cfg config.MongoDB) *MongoDB {

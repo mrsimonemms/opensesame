@@ -33,31 +33,23 @@ type Organisation struct {
 	UpdatedDate time.Time           `bson:"updatedDate"`
 }
 
-func (o *Organisation) GetUserIDs() ([]bson.M, error) {
+func PaginateUniqueUsers(o *models.Organisation) (filter []bson.M, err error) {
 	uniqueUsers := map[string]string{}
-
 	for _, u := range o.Users {
 		uniqueUsers[u.UserID] = u.UserID
 	}
 
-	users := []bson.M{}
-
+	filter = []bson.M{}
 	for u := range uniqueUsers {
 		id, err := bson.ObjectIDFromHex(u)
 		if err != nil {
 			return nil, fmt.Errorf("error converting org's user id to bson object id: %w", err)
 		}
 
-		users = append(users, bson.M{"_id": id})
+		filter = append(filter, bson.M{"_id": id})
 	}
 
-	return users, nil
-}
-
-func (o *Organisation) PopulateUsers(users map[string]*User) {
-	for key, value := range o.Users {
-		o.Users[key].Name = users[value.UserID].Name
-	}
+	return filter, nil
 }
 
 func (o *Organisation) ToModel() *models.Organisation {

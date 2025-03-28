@@ -126,8 +126,53 @@ func (h *handler) OrganisationGet(c *fiber.Ctx) error {
 		log.Error().Err(err).Msg("Error getting organisation")
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
+	if org == nil {
+		return fiber.ErrNotFound
+	}
 
 	return c.JSON(OrgGetResponse{Org: org})
+}
+
+// List organisation's users godoc
+// @Summary		List organisation's users
+// @Description List all the users attached to an organisation.
+// @Tags		Organisations
+// @Accept		json
+// @Produce		json
+// @Param		orgID	path	string	true	"Organisation ID" example(67e58132a5d5257f95a32518)
+// @Success		200	{object}	models.Pagination[OrganisationUser]
+// @Failure		401 "Unauthorised error"
+// @Router		/v1/orgs/{orgID}/users [get]
+// @Security	Bearer
+// @Security	Token
+func (h *handler) OrganisationListUsers(c *fiber.Ctx) error {
+	orgID := c.Params("orgID")
+	user := c.Locals(userContextKey).(*models.User)
+	log := c.Locals("logger").(zerolog.Logger)
+
+	page := max(c.QueryInt("page", 1), 1)
+	perPage := min(max(c.QueryInt("perPage", 25), 1), 100)
+
+	offset := perPage * (page - 1)
+
+	log.Debug().
+		Int("page", page).
+		Int("perPage", perPage).
+		Int("offset", offset).
+		Str("userId", user.ID).
+		Str("orgId", orgID).
+		Msg("Displaying users for organisation")
+
+	org, err := h.db.ListOrganisationUsers(c.Context(), offset, perPage, orgID, user.ID)
+	if err != nil {
+		log.Error().Err(err).Msg("Error getting user for organisation")
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+	if org == nil {
+		return fiber.ErrNotFound
+	}
+
+	return c.JSON(org)
 }
 
 // Update organisation godoc
