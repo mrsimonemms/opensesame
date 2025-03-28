@@ -38,7 +38,6 @@ import (
 // @description Authentication and authorization for cloud-native apps
 // @license.name Apache 2.0
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
-// @host localhost:9000
 // @BasePath /
 //
 // @securityDefinitions.apikey Bearer
