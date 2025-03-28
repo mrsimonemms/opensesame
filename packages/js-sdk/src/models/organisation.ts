@@ -14,8 +14,18 @@
  * limitations under the License.
  */
 
-export * from './express';
-export * from './interfaces/authentication/v1/authentication';
-export * from './models';
-export * from './passport/bootstrap';
-export * from './sdk';
+export class OrgUserModel {
+  userId: string;
+  role: string;
+  createdDate: Date;
+  updatedDate: Date;
+}
+
+export class OrgModel {
+  id: string;
+  name: string;
+  slug: string;
+  users: OrgUserModel[];
+  createdDate: Date;
+  updatedDate: Date;
+}

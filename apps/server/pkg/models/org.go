@@ -27,10 +27,10 @@ type OrganisationUser struct {
 }
 
 type Organisation struct {
-	ID          string             `json:"id" example:"67e58132a5d5257f95a32518"` // Represents the database ID
-	Name        string             `json:"name" example:"Org Name"`
-	Slug        string             `json:"slug" example:"orgname"`
-	Users       []OrganisationUser `json:"users"`
-	CreatedDate time.Time          `json:"createdDate" format:"date-time"`
-	UpdatedDate time.Time          `json:"updatedDate" format:"date-time"`
+	ID          string              `json:"id" example:"67e58132a5d5257f95a32518"` // Represents the database ID
+	Name        string              `json:"name" example:"Org Name"`
+	Slug        string              `json:"slug" example:"orgname"`
+	Users       []*OrganisationUser `json:"users"`
+	CreatedDate time.Time           `json:"createdDate" format:"date-time"`
+	UpdatedDate time.Time           `json:"updatedDate" format:"date-time"`
 }
