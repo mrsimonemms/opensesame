@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package mongodb
+package models
 
 import (
 	"fmt"
@@ -24,49 +24,17 @@ import (
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
-// Provider user-mapped model
-
-type providerUser struct {
-	Tokens         map[string]string `bson:"tokens"`
-	ProviderUserID string            `bson:"providerUserId"`
-	EmailAddress   *string           `bson:"emailAddress"`
-	Name           *string           `bson:"name"`
-	Username       *string           `bson:"username"`
-}
-
-func (p *providerUser) toModel() *models.ProviderAccount {
-	return &models.ProviderAccount{
-		Tokens:         p.Tokens,
-		ProviderUserID: p.ProviderUserID,
-		EmailAddress:   p.EmailAddress,
-		Name:           p.Name,
-		Username:       p.Username,
-	}
-}
-
-func providerUserToMongo(p *models.ProviderAccount) *providerUser {
-	return &providerUser{
-		Tokens:         p.Tokens,
-		ProviderUserID: p.ProviderUserID,
-		EmailAddress:   p.EmailAddress,
-		Name:           p.Name,
-		Username:       p.Username,
-	}
-}
-
-// User-mapped model
-
-type user struct {
+type User struct {
 	ID           bson.ObjectID            `bson:"_id,omitempty"`
 	EmailAddress string                   `bson:"emailAddress"`
 	Name         string                   `bson:"name"`
-	Accounts     map[string]*providerUser `bson:"accounts"`
+	Accounts     map[string]*ProviderUser `bson:"accounts"`
 	IsActive     bool                     `bson:"isActive"`
 	CreatedDate  time.Time                `bson:"createdDate"`
 	UpdatedDate  time.Time                `bson:"updatedDate"`
 }
 
-func (u *user) toModel() *models.User {
+func (u *User) ToModel() *models.User {
 	m := &models.User{
 		EmailAddress: u.EmailAddress,
 		Name:         u.Name,
@@ -77,7 +45,7 @@ func (u *user) toModel() *models.User {
 	}
 
 	for providerID, i := range u.Accounts {
-		m.Accounts[providerID] = i.toModel()
+		m.Accounts[providerID] = i.ToModel()
 	}
 
 	if !u.ID.IsZero() {
@@ -87,18 +55,18 @@ func (u *user) toModel() *models.User {
 	return m
 }
 
-func userToMongo(m *models.User) (*user, error) {
-	u := &user{
+func UserToMongo(m *models.User) (*User, error) {
+	u := &User{
 		EmailAddress: m.EmailAddress,
 		Name:         m.Name,
-		Accounts:     map[string]*providerUser{},
+		Accounts:     map[string]*ProviderUser{},
 		IsActive:     m.IsActive,
 		CreatedDate:  m.CreatedDate,
 		UpdatedDate:  m.UpdatedDate,
 	}
 
 	for providerID, i := range m.Accounts {
-		u.Accounts[providerID] = providerUserToMongo(i)
+		u.Accounts[providerID] = ProviderUserToMongo(i)
 	}
 
 	if m.ID != "" {
