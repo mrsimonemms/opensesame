@@ -71,3 +71,28 @@ func (o *Organisation) ToModel() *models.Organisation {
 
 	return m
 }
+
+func OrganisationToMongo(m *models.Organisation) (*Organisation, error) {
+	o := &Organisation{
+		Name:        m.Name,
+		Slug:        m.Slug,
+		Users:       []*OrganisationUser{},
+		CreatedDate: m.CreatedDate,
+		UpdatedDate: m.UpdatedDate,
+	}
+
+	for _, user := range m.Users {
+		o.Users = append(o.Users, OrganisationUserToMongo(user))
+	}
+
+	if m.ID != "" {
+		id, err := bson.ObjectIDFromHex(m.ID)
+		if err != nil {
+			return nil, fmt.Errorf("error converting organisation id to bson object id: %w", err)
+		}
+
+		o.ID = id
+	}
+
+	return o, nil
+}

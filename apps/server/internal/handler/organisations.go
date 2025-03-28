@@ -36,16 +36,68 @@ type OrgGetResponse struct {
 // @Tags		Organisations
 // @Accept		json
 // @Produce		json
-// @Success		200	"@todo"
+// @Success		200	{object}	models.Organisation
 // @Failure		400 "Validation error"
 // @Failure		401 "Unauthorised error"
+// @Param		users	body	models.OrgDTO	true	"Input"
 // @Router		/v1/orgs [post]
 // @Security	Bearer
 // @Security	Token
 func (h *handler) OrganisationCreate(c *fiber.Ctx) error {
-	return c.JSON(fiber.Map{
-		"type": "create org",
-	})
+	user := c.Locals(userContextKey).(*models.User)
+	log := c.Locals("logger").(zerolog.Logger)
+
+	org := &models.OrgDTO{
+		Users: []*models.OrgUserDTO{},
+	}
+
+	if err := c.BodyParser(org); err != nil {
+		log.Warn().Err(err).Msg("Error parsing body")
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+
+	// Ensure current user is org maintainer
+	hasCurrentUser := false
+	for key, value := range org.Users {
+		if value.UserID == user.ID {
+			hasCurrentUser = true
+			// Force maintainer role
+			// @todo(sje): ensure correct role
+			org.Users[key].Role = "ORG_MAINTAINER"
+		}
+	}
+	if !hasCurrentUser {
+		// Current user not present
+		log.Debug().Str("userID", user.ID).Msg("Adding current user to organisation")
+		org.Users = append(org.Users, &models.OrgUserDTO{
+			UserID: user.ID,
+			// @todo(sje): ensure correct role
+			Role: "ORG_MAINTAINER",
+		})
+	}
+
+	// Validate the organisation
+	if err := h.validator.Struct(org); err != nil {
+		log.Debug().Err(err).Msg("Organisation object invalid")
+		return err
+	}
+
+	existingOrg, err := h.orgsStore.CheckSlugIsUnique(c.Context(), org.Slug, nil)
+	if err != nil {
+		log.Error().Err(err).Msg("Error checking slug uniqueness")
+		return fiber.NewError(fiber.StatusServiceUnavailable, err.Error())
+	}
+	if !existingOrg {
+		log.Debug().Msg("Slug in use by other organisation")
+		return fiber.NewError(fiber.StatusBadRequest, "Slug in use")
+	}
+
+	organisation, err := h.db.SaveOrganisationRecord(c.Context(), org.ToModel())
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(organisation)
 }
 
 // List organisations godoc

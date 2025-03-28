@@ -45,6 +45,9 @@ type Driver interface {
 	// Get the organisation by ID
 	GetOrgByID(ctx context.Context, orgID, userID string) (org *models.Organisation, err error)
 
+	// Get the organisation by Slug
+	GetOrgBySlug(ctx context.Context, slug string) (org *models.Organisation, err error)
+
 	// Get the user by ID
 	GetUserByID(ctx context.Context, userID string) (user *models.User, err error)
 
@@ -59,6 +62,9 @@ type Driver interface {
 		orgID,
 		userID string,
 	) (users *models.Pagination[*models.OrganisationUser], err error)
+
+	// Save the org record to the database
+	SaveOrganisationRecord(ctx context.Context, model *models.Organisation) (user *models.Organisation, err error)
 
 	// Save the user record to the database
 	SaveUserRecord(ctx context.Context, model *models.User) (user *models.User, err error)

@@ -148,6 +148,23 @@ func (db *MongoDB) GetOrgByID(ctx context.Context, orgID, userID string) (*model
 	return result.ToModel(), nil
 }
 
+func (db *MongoDB) GetOrgBySlug(ctx context.Context, slug string) (*models.Organisation, error) {
+	filter := bson.D{
+		{Key: "slug", Value: slug},
+	}
+
+	var result mongoModels.Organisation
+	if err := db.activeConnection.db.Collection(OrgsCollection).FindOne(ctx, filter).Decode(&result); err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, nil
+		}
+
+		return nil, fmt.Errorf("error getting org by slug: %w", err)
+	}
+
+	return result.ToModel(), nil
+}
+
 func (db *MongoDB) GetUserByID(ctx context.Context, userID string) (*models.User, error) {
 	id, err := bson.ObjectIDFromHex(userID)
 	if err != nil {
@@ -282,6 +299,26 @@ func (db *MongoDB) ListOrganisationUsers(
 	}, nil
 }
 
+func (db *MongoDB) SaveOrganisationRecord(ctx context.Context, model *models.Organisation) (*models.Organisation, error) {
+	mongoModel, err := mongoModels.OrganisationToMongo(model)
+	if err != nil {
+		return nil, fmt.Errorf("error converting before saving org record: %w", err)
+	}
+
+	col := db.activeConnection.db.Collection(OrgsCollection)
+
+	recordID, err := saveGenericRecord(ctx, col, mongoModel.ID, mongoModel)
+	if err != nil {
+		return nil, err
+	}
+
+	mongoModel.ID = recordID
+
+	fmt.Printf("%+v\n", mongoModel)
+
+	return mongoModel.ToModel(), nil
+}
+
 func (db *MongoDB) SaveUserRecord(ctx context.Context, model *models.User) (*models.User, error) {
 	mongoModel, err := mongoModels.UserToMongo(model)
 	if err != nil {
@@ -289,20 +326,13 @@ func (db *MongoDB) SaveUserRecord(ctx context.Context, model *models.User) (*mod
 	}
 
 	col := db.activeConnection.db.Collection(UsersCollection)
-	if mongoModel.ID.IsZero() {
-		// No ID - create record
-		result, err := col.InsertOne(ctx, mongoModel)
-		if err != nil {
-			return nil, fmt.Errorf("error inserting user record: %w", err)
-		}
 
-		mongoModel.ID = result.InsertedID.(bson.ObjectID)
-	} else {
-		// ID exists - update record
-		if _, err := col.UpdateByID(ctx, mongoModel.ID, bson.M{"$set": mongoModel}); err != nil {
-			return nil, fmt.Errorf("error updating user record: %w", err)
-		}
+	recordID, err := saveGenericRecord(ctx, col, mongoModel.ID, mongoModel)
+	if err != nil {
+		return nil, err
 	}
+
+	mongoModel.ID = recordID
 
 	return mongoModel.ToModel(), nil
 }
@@ -364,6 +394,7 @@ func (db *MongoDB) applyIndices(ctx context.Context) error {
 		OrgsCollection: {
 			{
 				Keys: bson.D{
+					{Key: "_id", Value: 1},
 					{Key: "users.userID", Value: 1},
 				},
 			},
@@ -423,4 +454,22 @@ func New(cfg config.MongoDB) *MongoDB {
 		connectionURI: cfg.ConnectionURI,
 		database:      cfg.Database,
 	}
+}
+
+func saveGenericRecord(ctx context.Context, collection *mongo.Collection, recordID bson.ObjectID, record any) (bson.ObjectID, error) {
+	if recordID.IsZero() {
+		// No ID - create record
+		result, err := collection.InsertOne(ctx, record)
+		if err != nil {
+			return recordID, fmt.Errorf("error inserting org record: %w", err)
+		}
+
+		recordID = result.InsertedID.(bson.ObjectID)
+	}
+	// ID exists - update record
+	if _, err := collection.UpdateByID(ctx, recordID, bson.M{"$set": record}); err != nil {
+		return recordID, fmt.Errorf("error updating org record: %w", err)
+	}
+
+	return recordID, nil
 }
