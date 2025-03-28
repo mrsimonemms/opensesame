@@ -39,6 +39,9 @@ type Driver interface {
 	// Find the user by the provider and provider user ID
 	FindUserByProviderAndUserID(ctx context.Context, providerID, providerUserID string) (user *models.User, err error)
 
+	// Get the organisation by ID
+	GetOrgByID(ctx context.Context, orgID, userID string) (org *models.Organisation, err error)
+
 	// Get the user by ID
 	GetUserByID(ctx context.Context, userID string) (user *models.User, err error)
 

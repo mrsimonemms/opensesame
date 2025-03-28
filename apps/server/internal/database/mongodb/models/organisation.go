@@ -17,6 +17,7 @@
 package models
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/models"
@@ -30,6 +31,33 @@ type Organisation struct {
 	Users       []*OrganisationUser `bson:"users"`
 	CreatedDate time.Time           `bson:"createdDate"`
 	UpdatedDate time.Time           `bson:"updatedDate"`
+}
+
+func (o *Organisation) GetUserIDs() ([]bson.M, error) {
+	uniqueUsers := map[string]string{}
+
+	for _, u := range o.Users {
+		uniqueUsers[u.UserID] = u.UserID
+	}
+
+	users := []bson.M{}
+
+	for u := range uniqueUsers {
+		id, err := bson.ObjectIDFromHex(u)
+		if err != nil {
+			return nil, fmt.Errorf("error converting org's user id to bson object id: %w", err)
+		}
+
+		users = append(users, bson.M{"_id": id})
+	}
+
+	return users, nil
+}
+
+func (o *Organisation) PopulateUsers(users map[string]*User) {
+	for key, value := range o.Users {
+		o.Users[key].Name = users[value.UserID].Name
+	}
 }
 
 func (o *Organisation) ToModel() *models.Organisation {

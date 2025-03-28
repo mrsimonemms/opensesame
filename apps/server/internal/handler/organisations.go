@@ -20,7 +20,12 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/models"
 	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
+
+type OrgGetResponse struct {
+	Org *models.Organisation `json:"org"`
+}
 
 // Create organisation godoc
 // @Summary		Create organisation
@@ -49,7 +54,6 @@ func (h *handler) OrganisationCreate(c *fiber.Ctx) error {
 // @Param		page	query	int	false	"Page number"	example(1)
 // @Param		perPage	query	int	false	"Records per page"	example(25)
 // @Success		200	{object}	models.Pagination[models.Organisation]
-// @Failure		400 "Validation error"
 // @Failure		401 "Unauthorised error"
 // @Router		/v1/orgs [get]
 // @Security	Bearer
@@ -107,20 +111,23 @@ func (h *handler) OrganisationDelete(c *fiber.Ctx) error {
 // @Tags		Organisations
 // @Accept		json
 // @Produce		json
-// @Param		orgID	path	string	true	"Organisation ID"
-// @Success		200	{object}	models.Organisation
-// @Failure		400 "Validation error"
+// @Param		orgID	path	string	true	"Organisation ID" example(67e58132a5d5257f95a32518)
+// @Success		200	{object}	OrgGetResponse
 // @Failure		401 "Unauthorised error"
 // @Router		/v1/orgs/{orgID} [get]
 // @Security	Bearer
 // @Security	Token
 func (h *handler) OrganisationGet(c *fiber.Ctx) error {
 	orgID := c.Params("orgID")
+	user := c.Locals(userContextKey).(*models.User)
 
-	return c.JSON(fiber.Map{
-		"type":  "get org",
-		"orgID": orgID,
-	})
+	org, err := h.db.GetOrgByID(c.Context(), orgID, user.ID)
+	if err != nil {
+		log.Error().Err(err).Msg("Error getting organisation")
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(OrgGetResponse{Org: org})
 }
 
 // Update organisation godoc

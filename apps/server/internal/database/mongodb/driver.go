@@ -100,6 +100,65 @@ func (db *MongoDB) FindUserByProviderAndUserID(ctx context.Context, providerID, 
 	return result.ToModel(), nil
 }
 
+func (db *MongoDB) GetOrgByID(ctx context.Context, orgID, userID string) (*models.Organisation, error) {
+	id, err := bson.ObjectIDFromHex(orgID)
+	if err != nil {
+		return nil, fmt.Errorf("error converting org id to bson object id: %w", err)
+	}
+
+	filter := bson.D{
+		{Key: "_id", Value: id},
+		{Key: "users.userId", Value: userID},
+	}
+
+	var result mongoModels.Organisation
+	err = db.activeConnection.db.Collection(OrgsCollection).FindOne(ctx, filter).Decode(&result)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, nil
+		}
+
+		return nil, fmt.Errorf("error getting org by id: %w", err)
+	}
+
+	userIDs, err := result.GetUserIDs()
+	if err != nil {
+		return nil, err
+	}
+
+	users, err := db.findMultipleUsers(ctx, userIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	result.PopulateUsers(users)
+
+	return result.ToModel(), nil
+}
+
+func (db *MongoDB) findMultipleUsers(ctx context.Context, userIDs []bson.M) (map[string]*mongoModels.User, error) {
+	filter := bson.M{
+		"$or": userIDs,
+	}
+
+	cursor, err := db.activeConnection.db.Collection(UsersCollection).Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("error getting multiple users: %w", err)
+	}
+
+	var users []*mongoModels.User
+	if err := cursor.All(ctx, &users); err != nil {
+		return nil, fmt.Errorf("error populating multiple users from cursor: %w", err)
+	}
+
+	result := map[string]*mongoModels.User{}
+	for _, u := range users {
+		result[u.ID.Hex()] = u
+	}
+
+	return result, nil
+}
+
 func (db *MongoDB) GetUserByID(ctx context.Context, userID string) (*models.User, error) {
 	id, err := bson.ObjectIDFromHex(userID)
 	if err != nil {

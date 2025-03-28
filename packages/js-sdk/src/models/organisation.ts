@@ -17,6 +17,7 @@
 export class OrgUserModel {
   userId: string;
   role: string;
+  name?: string;
   createdDate: Date;
   updatedDate: Date;
 }
