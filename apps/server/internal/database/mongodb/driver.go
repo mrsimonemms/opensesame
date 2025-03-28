@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"time"
 
+	mongoModels "github.com/mrsimonemms/cloud-native-auth/apps/server/internal/database/mongodb/models"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/config"
 	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/models"
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -92,7 +93,7 @@ func (db *MongoDB) FindUserByProviderAndUserID(ctx context.Context, providerID, 
 		},
 	}
 
-	var result user
+	var result mongoModels.User
 	err := db.activeConnection.db.Collection(UsersCollection).FindOne(ctx, filter).Decode(&result)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -102,7 +103,7 @@ func (db *MongoDB) FindUserByProviderAndUserID(ctx context.Context, providerID, 
 		return nil, fmt.Errorf("error retrieving user by provider in mongodb: %w", err)
 	}
 
-	return result.toModel(), nil
+	return result.ToModel(), nil
 }
 
 func (db *MongoDB) GetUserByID(ctx context.Context, userID string) (*models.User, error) {
@@ -118,7 +119,7 @@ func (db *MongoDB) GetUserByID(ctx context.Context, userID string) (*models.User
 		},
 	}
 
-	var result user
+	var result mongoModels.User
 	err = db.activeConnection.db.Collection(UsersCollection).FindOne(ctx, filter).Decode(&result)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -128,11 +129,11 @@ func (db *MongoDB) GetUserByID(ctx context.Context, userID string) (*models.User
 		return nil, fmt.Errorf("error getting user by id: %w", err)
 	}
 
-	return result.toModel(), nil
+	return result.ToModel(), nil
 }
 
 func (db *MongoDB) SaveUserRecord(ctx context.Context, model *models.User) (*models.User, error) {
-	mongoModel, err := userToMongo(model)
+	mongoModel, err := mongoModels.UserToMongo(model)
 	if err != nil {
 		return nil, fmt.Errorf("error converting before saving user record: %w", err)
 	}
@@ -153,7 +154,7 @@ func (db *MongoDB) SaveUserRecord(ctx context.Context, model *models.User) (*mod
 		}
 	}
 
-	return mongoModel.toModel(), nil
+	return mongoModel.ToModel(), nil
 }
 
 func (db *MongoDB) UpdateAllUsers(
@@ -168,14 +169,14 @@ func (db *MongoDB) UpdateAllUsers(
 		return 0, fmt.Errorf("error retrieving all user records: %w", err)
 	}
 
-	var mongodbUsers []*user
+	var mongodbUsers []*mongoModels.User
 	if err := cursor.All(ctx, &mongodbUsers); err != nil {
 		return 0, fmt.Errorf("error getting all user records in cursor: %w", err)
 	}
 
 	users := make([]*models.User, 0)
 	for _, u := range mongodbUsers {
-		users = append(users, u.toModel())
+		users = append(users, u.ToModel())
 	}
 
 	updatedRecords, err := update(users)
@@ -185,7 +186,7 @@ func (db *MongoDB) UpdateAllUsers(
 
 	models := []mongo.WriteModel{}
 	for _, model := range updatedRecords {
-		s, err := userToMongo(model)
+		s, err := mongoModels.UserToMongo(model)
 		if err != nil {
 			return 0, fmt.Errorf("error converting user to mongo model: %w", err)
 		}
