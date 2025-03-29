@@ -27,7 +27,7 @@ import (
 
 func App() *fiber.App {
 	return fiber.New(fiber.Config{
-		AppName:               "cloud-native-auth",
+		AppName:               "opensesame",
 		DisableStartupMessage: true,
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
 			code := fiber.StatusInternalServerError

@@ -20,10 +20,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mrsimonemms/cloud-native-auth/apps/server/internal/database"
-	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/config"
-	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/models"
-	"github.com/mrsimonemms/cloud-native-auth/packages/authentication/v1"
+	"github.com/mrsimonemms/opensesame/apps/server/internal/database"
+	"github.com/mrsimonemms/opensesame/apps/server/pkg/config"
+	"github.com/mrsimonemms/opensesame/apps/server/pkg/models"
+	"github.com/mrsimonemms/opensesame/packages/authentication/v1"
 	"github.com/rs/zerolog/log"
 )
 

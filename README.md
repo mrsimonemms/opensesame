@@ -1,6 +1,6 @@
-# cloud-native-auth
+# Open Sesame
 
-Authentication and authorization for cloud-native apps
+Authentication and authorisation for cloud-native apps
 
 <!-- toc -->
 

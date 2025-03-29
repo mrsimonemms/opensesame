@@ -19,7 +19,7 @@ package models
 import (
 	"time"
 
-	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/models"
+	"github.com/mrsimonemms/opensesame/apps/server/pkg/models"
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 

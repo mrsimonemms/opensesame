@@ -16,7 +16,7 @@ syntax = "proto3";
 
 package authentication.v1;
 
-option go_package = "github.com/mrsimonemms/cloud-native-auth/packages/authentication";
+option go_package = "github.com/mrsimonemms/opensesame/packages/authentication";
 
 // AuthenticationService handles the individual authentication strategies
 service AuthenticationService {

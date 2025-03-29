@@ -26,19 +26,21 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
 	"github.com/gofiber/swagger"
-	"github.com/mrsimonemms/cloud-native-auth/packages/authentication/v1"
+	"github.com/mrsimonemms/opensesame/packages/authentication/v1"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog/log"
 
-	_ "github.com/mrsimonemms/cloud-native-auth/apps/server/docs"
+	_ "github.com/mrsimonemms/opensesame/apps/server/docs"
 )
 
-// @title Cloud Native Auth
+// @title Open Sesame
 // @version 1.0
-// @description Authentication and authorization for cloud-native apps
+// @description Authentication and authorisation for cloud-native apps
 // @license.name Apache 2.0
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 // @BasePath /
+// @contact.name Open Sesame
+// @contact.url https://opensesame.cloud
 //
 // @securityDefinitions.apikey Bearer
 // @in header

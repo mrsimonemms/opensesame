@@ -37,7 +37,7 @@ var rootOpts struct {
 
 var rootCmd = &cobra.Command{
 	Use:   ServiceName,
-	Short: "Authentication and authorization for cloud-native apps",
+	Short: "Authentication and authorisation for cloud-native apps",
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		level, err := zerolog.ParseLevel(rootOpts.LogLevel)
 		if err != nil {

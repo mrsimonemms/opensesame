@@ -22,8 +22,8 @@ import (
 	jwtware "github.com/gofiber/contrib/jwt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/mrsimonemms/cloud-native-auth/apps/server/internal/providers"
-	"github.com/mrsimonemms/cloud-native-auth/packages/authentication/v1"
+	"github.com/mrsimonemms/opensesame/apps/server/internal/providers"
+	"github.com/mrsimonemms/opensesame/packages/authentication/v1"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )

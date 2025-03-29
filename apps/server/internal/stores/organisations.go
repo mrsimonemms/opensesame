@@ -20,8 +20,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mrsimonemms/cloud-native-auth/apps/server/internal/database"
-	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/config"
+	"github.com/mrsimonemms/opensesame/apps/server/internal/database"
+	"github.com/mrsimonemms/opensesame/apps/server/pkg/config"
 )
 
 type Organisations struct {

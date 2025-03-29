@@ -20,7 +20,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/models"
+	"github.com/mrsimonemms/opensesame/apps/server/pkg/models"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 )

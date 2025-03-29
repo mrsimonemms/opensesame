@@ -20,8 +20,8 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/config"
-	"github.com/mrsimonemms/cloud-native-auth/packages/authentication/v1"
+	"github.com/mrsimonemms/opensesame/apps/server/pkg/config"
+	"github.com/mrsimonemms/opensesame/packages/authentication/v1"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

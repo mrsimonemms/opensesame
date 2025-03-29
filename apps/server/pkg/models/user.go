@@ -21,8 +21,8 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/config"
-	"github.com/mrsimonemms/cloud-native-auth/packages/authentication/v1"
+	"github.com/mrsimonemms/opensesame/apps/server/pkg/config"
+	"github.com/mrsimonemms/opensesame/packages/authentication/v1"
 )
 
 type User struct {

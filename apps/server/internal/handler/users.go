@@ -20,7 +20,7 @@ import (
 	"fmt"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/models"
+	"github.com/mrsimonemms/opensesame/apps/server/pkg/models"
 	"github.com/rs/zerolog"
 )
 

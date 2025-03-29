@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Route, User, bootstrapPassport } from '@cloud-native-auth/js-sdk';
+import { Route, User, bootstrapPassport } from '@opensesame-cloud/js-sdk';
 import { Profile } from 'passport';
 import { Strategy, StrategyOptions } from 'passport-github2';
 import { VerifyCallback } from 'passport-oauth2';

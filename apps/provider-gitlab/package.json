@@ -1,5 +1,5 @@
 {
-  "name": "@cloud-native-auth/provider-github",
+  "name": "@opensesame-cloud/provider-github",
   "version": "0.0.0",
   "description": "Authenticate with GitHub OAuth2 API",
   "author": "Simon Emms <simon@simonemms.com>",
@@ -20,7 +20,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
-    "@cloud-native-auth/js-sdk": "file:../../packages/js-sdk",
+    "@opensesame-cloud/js-sdk": "file:../../packages/js-sdk",
     "passport": "^0.7.0",
     "passport-gitlab2": "^5.0.0"
   },
