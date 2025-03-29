@@ -1,4 +1,4 @@
-module github.com/mrsimonemms/cloud-native-auth/packages/authentication
+module github.com/mrsimonemms/opensesame/packages/authentication
 
 go 1.24.1
 

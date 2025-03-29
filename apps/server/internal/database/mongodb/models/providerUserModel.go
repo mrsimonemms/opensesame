@@ -16,7 +16,7 @@
 
 package models
 
-import "github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/models"
+import "github.com/mrsimonemms/opensesame/apps/server/pkg/models"
 
 type ProviderUser struct {
 	Tokens         map[string]string `bson:"tokens"`

@@ -4,7 +4,7 @@ This bootstraps a standalone provider generated from [PassportJS](https://www.pa
 strategies.
 
 ```ts
-import { User, bootstrapPassport } from '@cloud-native-auth/js-sdk';
+import { User, bootstrapPassport } from '@opensesame-cloud/js-sdk';
 import { Strategy as GitHubStrategy } from 'passport-github2';
 
 // Create the strategy as-per the PassportJS docs

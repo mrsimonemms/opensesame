@@ -1,9 +1,8 @@
 {
-  "name": "@cloud-native-auth/js-sdk",
+  "name": "@opensesame-cloud/js-sdk",
   "version": "0.0.0",
   "description": "JavaScript and TypeScript API",
   "author": "Simon Emms <simon@simonemms.com>",
-  "private": true,
   "license": "Apache-2.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

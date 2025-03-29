@@ -25,7 +25,7 @@
     }
   },
   "containerEnv": {
-    "GIT_REPO": "github.com/mrsimonemms/cloud-native-auth"
+    "GIT_REPO": "github.com/mrsimonemms/opensesame"
   },
   "onCreateCommand": {
     "linkBufBinary": "sudo rm /usr/local/bin/buf && sudo ln -s /usr/local/lib/buf/buf/bin/buf /usr/local/bin/buf"

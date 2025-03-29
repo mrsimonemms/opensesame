@@ -1,7 +1,7 @@
 {
-  "name": "cloud-native-auth",
+  "name": "@opensesame-cloud/root",
   "version": "0.0.0",
-  "description": "Authentication and authorization for cloud-native apps",
+  "description": "Authentication and authorisation for cloud-native apps",
   "author": "Simon Emms <simon@simonemms.com>",
   "private": true,
   "license": "Apache-2.0",

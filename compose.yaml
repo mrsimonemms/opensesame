@@ -42,7 +42,7 @@ services:
     volumes:
       - ./apps:/home/node/root/apps
       - ./proto:/home/node/root/proto
-      - ./packages/js-sdk:/home/node/root/apps/provider-github/node_modules/@cloud-native-auth/js-sdk
+      - ./packages/js-sdk:/home/node/root/apps/provider-github/node_modules/@opensesame-cloud/js-sdk
     ports:
       - 3000:3000
     restart: on-failure
@@ -63,7 +63,7 @@ services:
     volumes:
       - ./apps:/home/node/root/apps
       - ./proto:/home/node/root/proto
-      - ./packages/js-sdk:/home/node/root/apps/provider-github/node_modules/@cloud-native-auth/js-sdk
+      - ./packages/js-sdk:/home/node/root/apps/provider-github/node_modules/@opensesame-cloud/js-sdk
     ports:
       - 3001:3000
     restart: on-failure

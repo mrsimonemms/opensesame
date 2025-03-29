@@ -17,7 +17,7 @@
 package main
 
 import (
-	"github.com/mrsimonemms/cloud-native-auth/apps/server/cmd"
+	"github.com/mrsimonemms/opensesame/apps/server/cmd"
 )
 
 func main() {

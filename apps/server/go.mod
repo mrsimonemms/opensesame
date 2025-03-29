@@ -1,8 +1,8 @@
-module github.com/mrsimonemms/cloud-native-auth/apps/server
+module github.com/mrsimonemms/opensesame/apps/server
 
 go 1.24.1
 
-replace github.com/mrsimonemms/cloud-native-auth/packages/authentication => ../../packages/authentication
+replace github.com/mrsimonemms/opensesame/packages/authentication => ../../packages/authentication
 
 require (
 	github.com/go-playground/validator/v10 v10.25.0
@@ -10,7 +10,7 @@ require (
 	github.com/gofiber/fiber/v2 v2.52.6
 	github.com/gofiber/swagger v1.1.1
 	github.com/golang-jwt/jwt/v5 v5.2.2
-	github.com/mrsimonemms/cloud-native-auth/packages/authentication v0.0.0-20250326220205-a130ae64606d
+	github.com/mrsimonemms/opensesame/packages/authentication v0.0.0-20250329181154-4d6a4389a202
 	github.com/prometheus/client_golang v1.21.1
 	github.com/rs/zerolog v1.34.0
 	github.com/spf13/cobra v1.9.1

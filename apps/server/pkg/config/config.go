@@ -26,7 +26,7 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/mrsimonemms/cloud-native-auth/packages/authentication/v1"
+	"github.com/mrsimonemms/opensesame/packages/authentication/v1"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -95,7 +95,7 @@ func LoadFromFile(configFile string) (*ServerConfig, error) {
 			ExpiresIn: Duration{
 				Duration: time.Hour * 24 * 30, // 30 days,
 			},
-			Issuer: "cloud-native-auth",
+			Issuer: "opensesame.cloud",
 		},
 		Server: Server{
 			Host: "0.0.0.0",

@@ -19,7 +19,7 @@ package models
 import (
 	"fmt"
 
-	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/config"
+	"github.com/mrsimonemms/opensesame/apps/server/pkg/config"
 )
 
 type ProviderAccount struct {

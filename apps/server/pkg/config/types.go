@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mrsimonemms/cloud-native-auth/packages/authentication/v1"
+	"github.com/mrsimonemms/opensesame/packages/authentication/v1"
 	"sigs.k8s.io/yaml"
 )
 

@@ -20,9 +20,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mrsimonemms/cloud-native-auth/apps/server/internal/database/mongodb"
-	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/config"
-	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/models"
+	"github.com/mrsimonemms/opensesame/apps/server/internal/database/mongodb"
+	"github.com/mrsimonemms/opensesame/apps/server/pkg/config"
+	"github.com/mrsimonemms/opensesame/apps/server/pkg/models"
 )
 
 // Common database interface to allow multiple database types

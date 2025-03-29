@@ -18,9 +18,9 @@ package handler
 
 import (
 	"github.com/go-playground/validator/v10"
-	"github.com/mrsimonemms/cloud-native-auth/apps/server/internal/database"
-	"github.com/mrsimonemms/cloud-native-auth/apps/server/internal/stores"
-	"github.com/mrsimonemms/cloud-native-auth/apps/server/pkg/config"
+	"github.com/mrsimonemms/opensesame/apps/server/internal/database"
+	"github.com/mrsimonemms/opensesame/apps/server/internal/stores"
+	"github.com/mrsimonemms/opensesame/apps/server/pkg/config"
 )
 
 type handler struct {
