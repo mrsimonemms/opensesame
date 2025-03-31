@@ -15,6 +15,7 @@
 APPS = ./apps
 PACKAGES = ./packages
 PROTO = ./proto
+STANDALONE = ./standalone
 
 copy-proto:
 	@for dir in $(shell ls ${APPS}); do \
@@ -55,7 +56,7 @@ generate-grpc:
 install: install-js-deps
 
 install-js-deps:
-	@for dir in $(shell ls ${APPS}/*/package.json ${PACKAGES}/*/package.json); do \
+	@for dir in $(shell ls ${APPS}/*/package.json ${PACKAGES}/*/package.json ${STANDALONE}/*/package.json); do \
 		cd $$(dirname $$dir); \
 		echo "Installing $$PWD"; \
 		npm ci; \
