@@ -29,11 +29,6 @@ import (
 	"github.com/rs/zerolog"
 )
 
-type ProviderDTO struct {
-	ID   string `json:"id" example:"github"`
-	Name string `json:"name" example:"GitHub"`
-}
-
 type ProviderLoginResponse struct {
 	//nolint:lll // Allow long example
 	Token string       `json:"token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjQ4OTg1NzMxNTksImlhdCI6MTc0MjkwMzEyNiwiaXNzIjoiY2xvdWQtbmF0aXZlLWF1dGgiLCJuYmYiOjE3NDI5MDMxMjYsInN1YiI6IjUwN2YxZjc3YmNmODZjZDc5OTQzOTAxMSJ9.MfozqyuUj7pM8OX9JfYHyRu06JpcrioqBqYh5b8GlYI"`
@@ -46,14 +41,14 @@ type ProviderLoginResponse struct {
 // @Tags		Providers
 // @Accept		json
 // @Produce		json
-// @Success		200	{object}	[]ProviderDTO
+// @Success		200	{object}	[]models.ProviderModel
 // @Router		/v1/providers [get]
 // @Security	Token
 func (h *handler) ProvidersList(c *fiber.Ctx) error {
-	providers := []ProviderDTO{}
+	providers := []models.ProviderModel{}
 
 	for _, i := range h.config.Providers {
-		providers = append(providers, ProviderDTO{
+		providers = append(providers, models.ProviderModel{
 			ID:   i.ID,
 			Name: i.Name,
 		})
