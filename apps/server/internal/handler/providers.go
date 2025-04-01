@@ -17,6 +17,7 @@
 package handler
 
 import (
+	"encoding/base64"
 	"fmt"
 	"net/url"
 	"sort"
@@ -134,8 +135,10 @@ func (h *handler) ProvidersLogin(c *fiber.Ctx) error {
 			return fiber.NewError(fiber.StatusInternalServerError)
 		}
 
+		encodedToken := base64.URLEncoding.EncodeToString([]byte(token))
+
 		q := u.Query()
-		q.Add("token", token)
+		q.Add("token", encodedToken)
 		u.RawQuery = q.Encode()
 
 		return c.Redirect(u.String())
