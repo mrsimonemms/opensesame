@@ -29,8 +29,8 @@ import (
 )
 
 type ProviderDTO struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+	ID   string `json:"id" example:"github"`
+	Name string `json:"name" example:"GitHub"`
 }
 
 type ProviderLoginResponse struct {
@@ -39,6 +39,15 @@ type ProviderLoginResponse struct {
 	User  *models.User `json:"user"`
 }
 
+// List providers godoc
+// @Summary		List providers
+// @Description Display a list of all providers available
+// @Tags		Providers
+// @Accept		json
+// @Produce		json
+// @Success		200	{object}	[]ProviderDTO
+// @Router		/v1/providers [get]
+// @Security	Token
 func (h *handler) ProvidersList(c *fiber.Ctx) error {
 	providers := []ProviderDTO{}
 
