@@ -1,0 +1,18 @@
+include:
+  - ../../compose.yaml
+services:
+  sveltekit:
+    image: node:lts
+    user: node
+    working_dir: /home/node/app/example
+    environment:
+      VITE_AUTH_PROXY_URL: http://server:3000/v1
+    volumes:
+      - ./:/home/node/app/example
+      - ../../packages/js-sdk:/home/node/packages/js-sdk
+    ports:
+      - 9999:9999
+    restart: on-failure
+    command: npm run dev -- --host 0.0.0.0 --port 9999
+    depends_on:
+      - server
