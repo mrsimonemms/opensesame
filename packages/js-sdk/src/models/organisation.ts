@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-export class OrgUserModel {
+export interface OrgUserModel {
   userId: string;
   role: string;
   name?: string;
@@ -23,7 +23,7 @@ export class OrgUserModel {
   updatedDate: Date;
 }
 
-export class OrgModel {
+export interface OrgModel {
   id: string;
   name: string;
   slug: string;

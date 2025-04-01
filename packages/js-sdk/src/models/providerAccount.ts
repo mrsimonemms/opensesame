@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-export class ProviderAccountModel {
+export interface ProviderAccountModel {
   // This is highly sensitive so will only be exported encrypted
-  tokens: Map<string, string>;
+  tokens: Record<string, string>;
   providerUserId: string;
   emailAddress?: string;
   name?: string;

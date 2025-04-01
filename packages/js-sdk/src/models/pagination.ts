@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-export class Pagination<T> {
+export interface Pagination<T> {
   data: T[]; // Subsection of data
 
   count: number; // Number of records on this page

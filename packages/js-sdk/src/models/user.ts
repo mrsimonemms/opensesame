@@ -15,11 +15,11 @@
  */
 import { ProviderAccountModel } from './providerAccount';
 
-export class UserModel {
+export interface UserModel {
   id: string; // Represents the database ID
   emailAddress: string;
   name: string;
-  accounts: Map<string, ProviderAccountModel>; // Key is the provider ID, eg github
+  accounts: Record<string, ProviderAccountModel>; // Key is the provider ID, eg github
   isActive: boolean;
   createdDate: Date;
   updatedDate: Date;
