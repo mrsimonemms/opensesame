@@ -1,7 +1,7 @@
 include:
   - ../../compose.yaml
 services:
-  sveltekit:
+  init_sveltekit: &sveltekit
     image: node:lts
     user: node
     working_dir: /home/node/app/example
@@ -10,9 +10,16 @@ services:
     volumes:
       - ./:/home/node/app/example
       - ../../packages/js-sdk:/home/node/packages/js-sdk
+    command: npm ci
+    restart: on-failure
+
+  sveltekit:
+    <<: *sveltekit
     ports:
       - 9999:9999
-    restart: on-failure
     command: npm run dev -- --host 0.0.0.0 --port 9999
     depends_on:
-      - server
+      init_sveltekit:
+        condition: service_completed_successfully
+      server:
+        condition: service_healthy

@@ -19,6 +19,10 @@ import { ReflectionService } from '@grpc/reflection';
 import { ConsoleLogger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import {
+  HealthImplementation,
+  protoPath as healthCheckProtoPath,
+} from 'grpc-health-check';
 import { Strategy } from 'passport';
 import { join } from 'path';
 
@@ -43,17 +47,27 @@ export async function bootstrapPassport(
       options: {
         url: process.env.LISTEN_URL ?? '0.0.0.0:3000',
         package: AUTHENTICATION_V1_PACKAGE_NAME,
-        protoPath: join(
-          process.env.PROTO_PATH ?? '',
-          'authentication',
-          'v1',
-          'authentication.proto',
-        ),
+        protoPath: [
+          healthCheckProtoPath,
+          join(
+            process.env.PROTO_PATH ?? '',
+            'authentication',
+            'v1',
+            'authentication.proto',
+          ),
+        ],
         onLoadPackageDefinition: (
           pkg: protoLoader.PackageDefinition,
-          server: Pick<Server, 'addService'>,
+          server: Server,
         ) => {
           new ReflectionService(pkg).addToServer(server);
+
+          const healthImpl = new HealthImplementation({
+            '': 'UNKNOWN',
+          });
+
+          healthImpl.addToServer(server);
+          healthImpl.setStatus('', 'SERVING');
         },
       },
     },

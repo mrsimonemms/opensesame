@@ -21,8 +21,19 @@ services:
       - mongodb
       - provider-github
       - provider-gitlab
+    depends_on:
+      provider-github:
+        condition: service_healthy
+      provider-gitlab:
+        condition: service_healthy
     restart: on-failure
     command: air -build.args_bin run -build.pre_cmd="go generate ./..." -build.exclude_dir docs
+    healthcheck:
+      test: curl --fail http://localhost:3000/livez || exit 1
+      interval: 10s
+      timeout: 1s
+      retries: 5
+      start_period: 10s
 
   #############
   # Providers #
@@ -30,7 +41,7 @@ services:
   provider-github:
     build:
       context: .
-      dockerfile: ./apps/node.Dockerfile
+      dockerfile: ./apps/node-grpc.Dockerfile
       target: dev
       args:
         APP: provider-github
@@ -43,6 +54,9 @@ services:
       - ./apps:/home/node/root/apps
       - ./proto:/home/node/root/proto
       - ./packages/js-sdk:/home/node/root/apps/provider-github/node_modules/@opensesame-cloud/js-sdk
+    healthcheck:
+      test: ["CMD", "/bin/grpc_health_probe", "-addr=:3000"]
+      start_period: 10s
     ports:
       - 3000:3000
     restart: on-failure
@@ -52,7 +66,7 @@ services:
   provider-gitlab:
     build:
       context: .
-      dockerfile: ./apps/node.Dockerfile
+      dockerfile: ./apps/node-grpc.Dockerfile
       target: dev
       args:
         APP: provider-gitlab
@@ -63,7 +77,10 @@ services:
     volumes:
       - ./apps:/home/node/root/apps
       - ./proto:/home/node/root/proto
-      - ./packages/js-sdk:/home/node/root/apps/provider-github/node_modules/@opensesame-cloud/js-sdk
+      - ./packages/js-sdk:/home/node/root/apps/provider-gitlab/node_modules/@opensesame-cloud/js-sdk
+    healthcheck:
+      test: ["CMD", "/bin/grpc_health_probe", "-addr=:3000"]
+      start_period: 10s
     ports:
       - 3001:3000
     restart: on-failure
