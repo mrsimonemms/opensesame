@@ -5,20 +5,20 @@ go 1.24.1
 replace github.com/mrsimonemms/opensesame/packages/authentication => ../../packages/authentication
 
 require (
-	github.com/go-playground/validator/v10 v10.25.0
+	github.com/go-playground/validator/v10 v10.26.0
 	github.com/gofiber/contrib/jwt v1.0.10
 	github.com/gofiber/fiber/v2 v2.52.6
 	github.com/gofiber/swagger v1.1.1
 	github.com/golang-jwt/jwt/v5 v5.2.2
-	github.com/mrsimonemms/opensesame/packages/authentication v0.0.0-20250329181154-4d6a4389a202
+	github.com/mrsimonemms/opensesame/packages/authentication v0.0.0-20250402100530-e22aa1c0de97
 	github.com/prometheus/client_golang v1.21.1
 	github.com/rs/zerolog v1.34.0
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.20.1
 	github.com/swaggo/swag v1.16.4
 	go.mongodb.org/mongo-driver/v2 v2.1.0
-	golang.org/x/net v0.37.0
-	google.golang.org/grpc v1.71.0
+	golang.org/x/net v0.38.0
+	google.golang.org/grpc v1.71.1
 	sigs.k8s.io/yaml v1.4.0
 )
 
@@ -61,7 +61,7 @@ require (
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/swaggo/files/v2 v2.0.2 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
-	github.com/valyala/fasthttp v1.59.0 // indirect
+	github.com/valyala/fasthttp v1.60.0 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/scram v1.1.2 // indirect
 	github.com/xdg-go/stringprep v1.0.4 // indirect
