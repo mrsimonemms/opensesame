@@ -36,12 +36,14 @@ type DatabaseType string
 
 const (
 	DatabaseTypeMongoDB DatabaseType = "mongodb"
+	DatabaseTypeSQL     DatabaseType = "sql"
 )
 
 type Database struct {
-	Type DatabaseType `json:"type" validate:"required,oneof=mongodb"`
+	Type DatabaseType `json:"type" validate:"required,oneof=mongodb sql"`
 
 	MongoDB `json:"mongodb" validate:"required_if=type mongodb"`
+	SQL     `json:"sql" validate:"required_if=type sql"`
 }
 
 type Duration struct {
@@ -101,6 +103,11 @@ type Server struct {
 	Port int    `json:"port" validate:"required,number"`
 
 	Cookie ServerCookie `json:"cookie"`
+}
+
+type SQL struct {
+	Type string `json:"type" validate:"required,oneof=mysql postgres"`
+	DSN  string `json:"dsn" validate:"required"`
 }
 
 type ServerCookie struct {

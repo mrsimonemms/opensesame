@@ -19,6 +19,7 @@ services:
     links:
       - gobblr
       - mongodb
+      - mysql
       - provider-github
       - provider-gitlab
     depends_on:
@@ -117,3 +118,14 @@ services:
     image: mongo:8.0
     ports:
       - 4000:27017
+
+  mysql:
+    image: mysql:8
+    environment:
+      MYSQL_DATABASE: app
+      MYSQL_RANDOM_ROOT_PASSWORD: "true"
+      MYSQL_PASSWORD: password
+      MYSQL_USER: app
+    ports:
+      - 4002:3306
+    restart: on-failure

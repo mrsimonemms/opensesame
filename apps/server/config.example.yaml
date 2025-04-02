@@ -1,5 +1,8 @@
 database:
-  type: mongodb
+  type: sql
+  sql:
+    type: mysql
+    dsn: app:password@tcp(mysql:3306)/app?charset=utf8mb4&parseTime=True&loc=Local
   mongodb:
     connectionURI: mongodb://mongodb:27017
     database: auth

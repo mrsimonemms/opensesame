@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mrsimonemms/opensesame/apps/server/internal/database/gorm"
 	"github.com/mrsimonemms/opensesame/apps/server/internal/database/mongodb"
 	"github.com/mrsimonemms/opensesame/apps/server/pkg/config"
 	"github.com/mrsimonemms/opensesame/apps/server/pkg/models"
@@ -75,11 +76,18 @@ type Driver interface {
 
 func New(cfg *config.ServerConfig) (Driver, error) {
 	var db Driver
+	var err error
 	switch cfg.Database.Type {
 	case config.DatabaseTypeMongoDB:
 		db = mongodb.New(cfg.Database.MongoDB)
+	case config.DatabaseTypeSQL:
+		db, err = gorm.New(cfg.Database.SQL)
 	default:
 		return nil, fmt.Errorf("unknown database type")
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("error creating database instance: %w", err)
 	}
 
 	return db, nil
