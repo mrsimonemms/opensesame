@@ -18,6 +18,7 @@
     "@nestjs/config": "^4.0.1",
     "@nestjs/microservices": "^11.0.12",
     "express": "^4.21.2",
+    "grpc-health-check": "^2.0.2",
     "passport": "^0.7.0"
   },
   "devDependencies": {
