@@ -11,6 +11,7 @@ providers:
   - id: github
     name: GitHub
     address: provider-github:3000
+    disabled: false
   - id: gitlab
     name: GitLab
     address: provider-gitlab:3000

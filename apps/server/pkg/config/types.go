@@ -89,9 +89,10 @@ type MongoDB struct {
 }
 
 type Provider struct {
-	ID      string `json:"id" validate:"required"`
-	Name    string `json:"name" validate:"required"`
-	Address string `json:"address" validate:"required,hostname_port"`
+	Disabled bool   `json:"disabled"`
+	ID       string `json:"id" validate:"required"`
+	Name     string `json:"name" validate:"required"`
+	Address  string `json:"address" validate:"required,hostname_port"`
 
 	Client authentication.AuthenticationServiceClient `json:"-"`
 }

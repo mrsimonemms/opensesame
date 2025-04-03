@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"slices"
 	"strings"
 	"text/template"
 	"time"
@@ -106,6 +107,10 @@ func LoadFromFile(configFile string) (*ServerConfig, error) {
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
 		return nil, fmt.Errorf("unable to unmarshal data: %w", err)
 	}
+
+	cfg.Providers = slices.DeleteFunc(cfg.Providers, func(p Provider) bool {
+		return p.Disabled
+	})
 
 	return &cfg, nil
 }
