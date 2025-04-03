@@ -72,7 +72,7 @@ const config: Config = {
       title: "Open Sesame",
       logo: {
         alt: "Open Sesame",
-        src: "img/logo.svg",
+        src: "img/icon.png",
       },
       items: [
         {
@@ -108,7 +108,7 @@ const config: Config = {
               href: "https://github.com/mrsimonemms/opensesame",
             },
             {
-              label: "X",
+              label: "Twitter",
               href: "https://x.com/mrsimonemms",
             },
           ],
