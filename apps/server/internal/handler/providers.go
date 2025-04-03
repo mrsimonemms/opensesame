@@ -20,7 +20,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/url"
-	"sort"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -37,7 +36,7 @@ type ProviderLoginResponse struct {
 
 // List providers godoc
 // @Summary		List providers
-// @Description Display a list of all providers available
+// @Description Display a list of all providers available. Output in the order set in the config file
 // @Tags		Providers
 // @Accept		json
 // @Produce		json
@@ -53,11 +52,6 @@ func (h *handler) ProvidersList(c *fiber.Ctx) error {
 			Name: i.Name,
 		})
 	}
-
-	// Put in alphabetical order
-	sort.Slice(providers, func(i, j int) bool {
-		return providers[i].Name < providers[j].Name
-	})
 
 	return c.JSON(providers)
 }
