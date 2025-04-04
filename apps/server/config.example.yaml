@@ -15,6 +15,9 @@ providers:
   - id: gitlab
     name: GitLab
     address: provider-gitlab:3000
+  - id: local
+    name: Local
+    address: provider-local:3000
 server:
   port: 3000
   cookie:
