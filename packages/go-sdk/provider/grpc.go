@@ -17,7 +17,6 @@
 package provider
 
 import (
-	"context"
 	"fmt"
 	"maps"
 	"strings"
@@ -69,7 +68,7 @@ func NewProviderServer(name, description string, authenticationCmd authenticatio
 			url, err := c.Flags().GetString("url")
 			cobra.CheckErr(err)
 
-			return authenticationCmd.Auth(context.Background(), &authentication.AuthRequest{
+			return authenticationCmd.Auth(c.Context(), &authentication.AuthRequest{
 				Body:    body,
 				Headers: headers,
 				Method:  method,
@@ -97,8 +96,37 @@ func NewProviderServer(name, description string, authenticationCmd authenticatio
 				return nil, fmt.Errorf("unknown route, must be one of: %s", strings.Join(keys, ", "))
 			}
 
-			return authenticationCmd.RouteEnabled(context.Background(), &authentication.RouteEnabledRequest{
+			return authenticationCmd.RouteEnabled(c.Context(), &authentication.RouteEnabledRequest{
 				Route: authentication.Route(route),
+			})
+		},
+	})
+
+	grpcHelper.NewGRPCCommand(g, "userCreate", grpcHelper.Listener[authentication.UserCreateResponse]{
+		Flags: func(c *cobra.Command) {
+			c.Flags().String("name", "", "User's name")
+			c.Flags().String("username", "", "User's usernamename")
+			c.Flags().String("emailAddress", "", "User's email address")
+			c.Flags().String("password", "", "User's password")
+		},
+		Run: func(c *cobra.Command, s []string) (*authentication.UserCreateResponse, error) {
+			name, err := c.Flags().GetString("name")
+			cobra.CheckErr(err)
+
+			username, err := c.Flags().GetString("username")
+			cobra.CheckErr(err)
+
+			emailAddress, err := c.Flags().GetString("emailAddress")
+			cobra.CheckErr(err)
+
+			password, err := c.Flags().GetString("password")
+			cobra.CheckErr(err)
+
+			return authenticationCmd.UserCreate(c.Context(), &authentication.UserCreateRequest{
+				Name:         name,
+				Username:     username,
+				EmailAddress: emailAddress,
+				Password:     password,
 			})
 		},
 	})

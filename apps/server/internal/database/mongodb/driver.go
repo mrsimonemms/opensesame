@@ -314,8 +314,6 @@ func (db *MongoDB) SaveOrganisationRecord(ctx context.Context, model *models.Org
 
 	mongoModel.ID = recordID
 
-	fmt.Printf("%+v\n", mongoModel)
-
 	return mongoModel.ToModel(), nil
 }
 

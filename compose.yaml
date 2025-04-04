@@ -21,10 +21,13 @@ services:
       - mongodb
       - provider-github
       - provider-gitlab
+      - provider-local
     depends_on:
       provider-github:
         condition: service_healthy
       provider-gitlab:
+        condition: service_healthy
+      provider-local:
         condition: service_healthy
     restart: on-failure
     command: air -build.args_bin run -build.pre_cmd="go generate ./..." -build.exclude_dir docs
@@ -86,6 +89,29 @@ services:
     restart: on-failure
     depends_on:
       - js-sdk
+
+  provider-local:
+    build:
+      context: .
+      dockerfile: ./apps/go-grpc.Dockerfile
+      target: dev
+      args:
+        APP: provider-local
+    environment:
+      DATABASE_TYPE: mongodb
+      DATABASE_MONGODB_CONNECTION_URI: mongodb://mongodb:27017
+      DATABASE_MONGODB_DATABASE: auth
+      DATABASE_MONGODB_COLLECTION: local_users
+    volumes:
+      - .:/go/root
+    healthcheck:
+      test: ["CMD", "/go/bin/grpc_health_probe", "-addr=:3000"]
+      start_period: 10s
+    ports:
+      - 3002:3000
+    restart: on-failure
+    links:
+      - mongodb
 
   js-sdk:
     image: node:lts
