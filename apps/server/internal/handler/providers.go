@@ -25,6 +25,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/mrsimonemms/opensesame/apps/server/internal/providers"
 	"github.com/mrsimonemms/opensesame/apps/server/pkg/models"
+	"github.com/mrsimonemms/opensesame/packages/authentication/v1"
 	"github.com/rs/zerolog"
 )
 
@@ -32,6 +33,13 @@ type ProviderLoginResponse struct {
 	//nolint:lll // Allow long example
 	Token string       `json:"token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjQ4OTg1NzMxNTksImlhdCI6MTc0MjkwMzEyNiwiaXNzIjoiY2xvdWQtbmF0aXZlLWF1dGgiLCJuYmYiOjE3NDI5MDMxMjYsInN1YiI6IjUwN2YxZjc3YmNmODZjZDc5OTQzOTAxMSJ9.MfozqyuUj7pM8OX9JfYHyRu06JpcrioqBqYh5b8GlYI"`
 	User  *models.User `json:"user"`
+}
+
+type ProviderCreateUser struct {
+	Name         string `json:"name" xml:"name" form:"name" example:"Test Testington" validate:"required"`
+	Username     string `json:"username" xml:"username" form:"username" example:"testtestington" validate:"required"`
+	EmailAddress string `json:"emailAddress" xml:"emailAddress" form:"emailAddress" example:"test@testington.com" validate:"required,email"`
+	Password     string `json:"password" xml:"password" form:"password" example:"this-is-some-password" validate:"required,min=8"`
 }
 
 // List providers godoc
@@ -65,6 +73,7 @@ func (h *handler) ProvidersList(c *fiber.Ctx) error {
 // @Success		200	{object}	ProviderLoginResponse
 // @Response	302	"Redirect to provider login page"
 // @Param		providerID	path	string	true	"Provider ID"	default(github)
+// @Param		users	body	map[string]any	false	"Input"
 // @Router		/v1/providers/{providerID}/login [get]
 // @Router		/v1/providers/{providerID}/login [post]
 // @Router		/v1/providers/{providerID}/login/callback [get]
@@ -183,4 +192,66 @@ func handleLoginInputCookies(c *fiber.Ctx) {
 			Value:   "",
 		})
 	}
+}
+
+// Create user godoc
+// @Summary		Create user
+// @Description Create a user via the provider
+// @Tags		Providers
+// @Accept		json
+// @Produce		json
+// @Success		200	{object}	ProviderCreateUser
+// @Param		providerID	path	string	true	"Provider ID"	default(local)
+// @Param		users	body	ProviderCreateUser	false	"Input"
+// @Router		/v1/providers/{providerID} [post]
+// @Security	Token
+func (h *handler) ProvidersCreateUser(c *fiber.Ctx) error {
+	log := c.Locals("logger").(zerolog.Logger)
+
+	providerID := c.Params("providerID")
+	provider := providers.FindProvider(h.config.Providers, providerID)
+	if provider == nil {
+		log.Debug().Str("providerID", providerID).Msg("Unknown provider ID")
+		return fiber.NewError(fiber.StatusNotFound, fmt.Sprintf("Unknown provider ID: %s", providerID))
+	}
+
+	l := log.With().Str("providerID", provider.ID).Logger()
+
+	body := new(ProviderCreateUser)
+	if err := c.BodyParser(body); err != nil {
+		l.Debug().Err(err).Msg("Error parsing body")
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+
+	// Validate the input
+	if err := h.validator.Struct(body); err != nil {
+		log.Debug().Err(err).Msg("ProviderCreateUser object invalid")
+		return err
+	}
+
+	l.Debug().Msg("Triggering call to gRPC provider")
+	res, err := provider.Client.UserCreate(c.Context(), &authentication.UserCreateRequest{
+		Name:         body.Name,
+		Username:     body.Username,
+		EmailAddress: body.EmailAddress,
+		Password:     body.Password,
+	})
+	if err != nil {
+		statusCode, code, msg := providers.ConvertGRPCErrorCodeToHTTP(err)
+
+		l.Error().
+			Err(err).
+			Int("statusCode", statusCode).
+			Uint32("grpcCode", uint32(code)).
+			Str("errorMsg", msg).
+			Msg("Error calling gRPC provider")
+
+		return fiber.NewError(statusCode, msg)
+	}
+
+	fmt.Printf("%+v\n", provider)
+	fmt.Printf("%+v\n", res)
+	return c.JSON(fiber.Map{
+		"hello": "world",
+	})
 }
