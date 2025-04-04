@@ -108,6 +108,11 @@ func (h *handler) Register(app *fiber.App) {
 			h.ProvidersLogin,
 		)
 		router.Post(
+			":providerID",
+			h.IsRouteEnabled(authentication.Route_ROUTE_USER_CREATE),
+			h.ProvidersCreateUser,
+		)
+		router.Post(
 			"/:providerID/login",
 			h.IsRouteEnabled(authentication.Route_ROUTE_LOGIN_POST),
 			h.VerifyUser(true),
