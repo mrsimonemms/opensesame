@@ -6,3 +6,4 @@
 | --- | --- | --- | --- |
 | [apps/server/internal/handler/organisations.go](apps/server/internal/handler/organisations.go#L65) | 65 | Simon Emms <simon@simonemms.com> | ensure correct role |
 | [apps/server/internal/handler/organisations.go](apps/server/internal/handler/organisations.go#L74) | 74 | Simon Emms <simon@simonemms.com> | ensure correct role |
+| [packages/js-sdk/src/passport/app.controller.ts](packages/js-sdk/src/passport/app.controller.ts#L73) | 73 | Simon Emms <simon@simonemms.com> | implement user create route |
