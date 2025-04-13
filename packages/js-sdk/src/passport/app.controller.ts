@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { status as GrpcStatus } from '@grpc/grpc-js';
 import { Controller, Inject, Logger } from '@nestjs/common';
-import { GrpcMethod } from '@nestjs/microservices';
+import { GrpcMethod, RpcException } from '@nestjs/microservices';
 import { Strategy } from 'passport';
 
 import { ExpressRequest } from '../express';
@@ -22,8 +23,10 @@ import {
   AUTHENTICATION_SERVICE_NAME,
   AuthRequest,
   AuthResponse,
+  Route,
   RouteEnabledRequest,
   RouteEnabledResponse,
+  UserCreateRequest,
 } from '../interfaces/authentication/v1/authentication';
 import { SDK } from '../sdk';
 import { ROUTES } from './bootstrap';
@@ -53,5 +56,24 @@ export class AppController {
       // If it's not defined, treat as disabled
       enabled: this.routes.get(data.route) ?? false,
     };
+  }
+
+  @GrpcMethod(AUTHENTICATION_SERVICE_NAME, 'userCreate')
+  userCreate(data: UserCreateRequest): UserCreateRequest {
+    console.log({ data });
+
+    if (!this.routes.get(Route.ROUTE_USER_CREATE)) {
+      // Route not enabled - throw error
+      throw new RpcException({
+        code: GrpcStatus.NOT_FOUND,
+        message: 'Route disabled',
+      });
+    }
+
+    // @todo(sje): implement user create route
+    throw new RpcException({
+      code: GrpcStatus.UNIMPLEMENTED,
+      message: 'Unimplemented',
+    });
   }
 }

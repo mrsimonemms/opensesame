@@ -52,21 +52,7 @@ func Authenticate(c *fiber.Ctx, provider config.Provider) (*authentication.User,
 	l.Debug().Msg("Triggering call to gRPC provider")
 	res, err := provider.Client.Auth(c.Context(), generateAuthRequest(c))
 	if err != nil {
-		grpcError := status.Convert(err)
-		code := grpcError.Code()
-		msg := grpcError.Message()
-
-		statusCode := fiber.StatusServiceUnavailable
-		switch code {
-		case codes.InvalidArgument, codes.FailedPrecondition:
-			statusCode = fiber.StatusBadRequest
-		case codes.NotFound:
-			statusCode = fiber.StatusNotFound
-		case codes.Unimplemented, codes.Internal:
-			statusCode = fiber.StatusInternalServerError
-		case codes.Unauthenticated:
-			statusCode = fiber.StatusUnauthorized
-		}
+		statusCode, code, msg := ConvertGRPCErrorCodeToHTTP(err)
 
 		l.Error().
 			Err(err).
@@ -89,6 +75,26 @@ func Authenticate(c *fiber.Ctx, provider config.Provider) (*authentication.User,
 
 	l.Error().Msg("Empty AuthResponse received")
 	return nil, fiber.ErrUnauthorized
+}
+
+func ConvertGRPCErrorCodeToHTTP(err error) (statusCode int, code codes.Code, msg string) {
+	grpcError := status.Convert(err)
+	code = grpcError.Code()
+	msg = grpcError.Message()
+
+	statusCode = fiber.StatusServiceUnavailable
+	switch code {
+	case codes.InvalidArgument, codes.FailedPrecondition:
+		statusCode = fiber.StatusBadRequest
+	case codes.NotFound:
+		statusCode = fiber.StatusNotFound
+	case codes.Unimplemented, codes.Internal:
+		statusCode = fiber.StatusInternalServerError
+	case codes.Unauthenticated:
+		statusCode = fiber.StatusUnauthorized
+	}
+
+	return statusCode, code, msg
 }
 
 func FindProvider(providers []config.Provider, providerID string) *config.Provider {

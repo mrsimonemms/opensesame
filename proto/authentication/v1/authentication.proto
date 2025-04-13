@@ -24,6 +24,8 @@ service AuthenticationService {
   rpc Auth(AuthRequest) returns (AuthResponse) {}
   // Validates that a route is active for the strategy
   rpc RouteEnabled(RouteEnabledRequest) returns (RouteEnabledResponse) {}
+  // Allows creation of a new user
+  rpc UserCreate(UserCreateRequest) returns (UserCreateResponse) {}
 }
 
 // KeyRepeatedValue handles definition of repeated values in maps
@@ -72,6 +74,8 @@ enum Route {
   ROUTE_LOGIN_POST = 2;
   // GET:/login/callback URL
   ROUTE_CALLBACK_GET = 3;
+  // POST:/ URL
+  ROUTE_USER_CREATE = 4;
 }
 
 // RouteEnabledRequest
@@ -106,4 +110,28 @@ message User {
   optional string username = 4;
   // The user's email address according to the provider
   optional string email_address = 5;
+}
+
+// UserCreateRequest
+message UserCreateRequest {
+  // The user's name
+  string name = 1;
+  // The user's username
+  string username = 2;
+  // The user's email address
+  string email_address = 3;
+  // The user's password
+  string password = 4;
+}
+
+// UserCreateResponse
+message UserCreateResponse {
+  // The user's ID
+  string id = 1;
+  // The user's name
+  string name = 2;
+  // The user's username
+  string username = 3;
+  // The user's email address
+  string email_address = 4;
 }
